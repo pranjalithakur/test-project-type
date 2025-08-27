@@ -8,62 +8,63 @@
 /// # Background
 ///
 /// aggregator for orderbook and AMM
-/// 
+///
 
 module sea::aggregator {
     // use std::vector;
     use std::signer::address_of;
     use aptos_framework::coin::{Self, Coin};
-    
+
     // use sea::amm;
     use sea::market;
     use sea::utils;
     // use sea::fee;
     use sea::router;
 
-    const BUY:                u8   = 1;
-    const SELL:               u8   = 2;
-    const SIDE_ALL:           u8   = 3;
+    const BUY: u8 = 1;
+    const SELL: u8 = 2;
+    const SIDE_ALL: u8 = 3;
 
-    const E_INSUFFICIENT_BASE_RESERVE:            u64 = 7008;
-    const E_INSUFFICIENT_AMOUNT_OUT:              u64 = 7009;
-    const E_NON_ZERO_COIN:                        u64 = 7010;
-    const E_EMPTY_POOL:                           u64 = 7011;
-    const E_INVALID_CLAC_QTY:                     u64 = 7012;
+    const E_INSUFFICIENT_BASE_RESERVE: u64 = 7008;
+    const E_INSUFFICIENT_AMOUNT_OUT: u64 = 7009;
+    const E_NON_ZERO_COIN: u64 = 7010;
+    const E_EMPTY_POOL: u64 = 7011;
+    const E_INVALID_CLAC_QTY: u64 = 7012;
 
     // hybrid swap
     public entry fun hybrid_swap_entry<B, Q>(
         account: &signer,
         side: u8,
-        amm_base_qty: u64,  // buy: this is amm base out; sell: is is amm base in
+        amm_base_qty: u64, // buy: this is amm base out; sell: is is amm base in
         amm_quote_vol: u64, // buy: this is quote in; sell: this is amm quote out
-        ob_base_qty: u64,   // order book base qty
-        ob_quote_vol: u64,  // order book quote qty
-        min_out: u64,       // slippage min out quote volume
+        ob_base_qty: u64, // order book base qty
+        ob_quote_vol: u64, // order book quote qty
+        min_out: u64 // slippage min out quote volume
     ) {
         let addr = address_of(account);
 
-        let (base_out, quote_out) = if (side == BUY) {
-            hybrid_swap<B, Q>(
-                addr,
-                side,
-                amm_base_qty,
-                amm_quote_vol,
-                coin::zero(),
-                coin::withdraw(account, amm_quote_vol),
-                market::new_order<B, Q>(account, side, ob_base_qty, ob_quote_vol, 0, 0),
-            )
-        } else {
-            hybrid_swap<B, Q>(
-                addr,
-                side,
-                amm_base_qty,
-                amm_quote_vol,
-                coin::withdraw(account, amm_base_qty),
-                coin::zero(),
-                market::new_order<B, Q>(account, side, ob_base_qty, ob_quote_vol, 0, 0),
-            )
-        };
+        let (base_out, quote_out) =
+            if (side == BUY) {
+                hybrid_swap<B, Q>(
+                    addr,
+                    side,
+                    amm_base_qty,
+                    amm_quote_vol,
+                    coin::zero(),
+                    coin::withdraw(account, amm_quote_vol),
+                    market::new_order<B, Q>(account, side, ob_base_qty, ob_quote_vol, 0, 0)
+                )
+            } else {
+                hybrid_swap<B, Q>(
+                    addr,
+                    side,
+                    amm_base_qty,
+                    amm_quote_vol,
+                    coin::withdraw(account, amm_base_qty),
+                    coin::zero(),
+                    market::new_order<B, Q>(account, side, ob_base_qty, ob_quote_vol, 0, 0)
+                )
+            };
 
         if (side == BUY) {
             // taker got base
@@ -74,10 +75,6 @@ module sea::aggregator {
             assert!(coin::value(&quote_out) >= min_out, E_INSUFFICIENT_AMOUNT_OUT);
             utils::register_coin_if_not_exist<Q>(account);
         };
-
-        let addr = address_of(account);
-        coin::deposit(addr, base_out);
-        coin::deposit(addr, quote_out);
     }
 
     /*
@@ -104,7 +101,7 @@ module sea::aggregator {
     ////////////////////////////////////////////////////////////////////////////
     /// PUBLIC FUNCTIONS
     ////////////////////////////////////////////////////////////////////////////
-    
+
     /*
     // calc how many amm_qty, ob_qty under price
     // amm_base_qty amm_quote_vol ob_base_qty ob_quote_vol
@@ -141,7 +138,7 @@ module sea::aggregator {
         amm_fee_ratio: u128,
         steps: &vector<market::PriceStep>,
     ): (u64, u64, u64, u64) {
-        // first, check the orderbook's price is 
+        // first, check the orderbook's price is
         if (vector::length(steps) == 0) {
             // all use amm
             if (side == BUY) {
@@ -363,8 +360,8 @@ module sea::aggregator {
         amm_base_qty: u64,
         amm_quote_vol: u64,
         amm_base: Coin<B>,
-        amm_quote: Coin<Q>,  // buy: this is quote in; sell: this is amm base in
-        order: market::OrderEntity<B, Q>,   // order book quote qty
+        amm_quote: Coin<Q>, // buy: this is quote in; sell: this is amm base in
+        order: market::OrderEntity<B, Q> // order book quote qty
     ): (Coin<B>, Coin<Q>) {
         let base_out = coin::zero<B>();
         let quote_out = coin::zero<Q>();
@@ -382,13 +379,17 @@ module sea::aggregator {
             if (side == BUY) {
                 // buy exact base
                 // let coin_in = coin::withdraw<Q>(account, amm_quote_vol);
-                let coin_out = router::swap_quote_for_base<B, Q>(amm_quote, amm_base_qty);
+                let coin_out = router::swap_quote_for_base<B, Q>(
+                    amm_quote, amm_base_qty
+                );
                 coin::merge(&mut base_out, coin_out);
                 coin::merge(&mut base_out, amm_base);
             } else {
                 // sell exact base
                 // let coin_in = coin::withdraw<B>(account, amm_base_qty);
-                let coin_out  = router::swap_base_for_quote<B, Q>(amm_base, amm_quote_vol);
+                let coin_out = router::swap_base_for_quote<B, Q>(
+                    amm_base, amm_quote_vol
+                );
                 coin::merge(&mut quote_out, coin_out);
                 coin::merge(&mut quote_out, amm_quote);
             };
@@ -412,15 +413,9 @@ module sea::aggregator {
     // #[test_only]
     // use std::debug;
 
-    #[test(
-        user1 = @user_1,
-        user2 = @user_2,
-        user3 = @user_3
-    )]
+    #[test(user1 = @user_1, user2 = @user_2, user3 = @user_3)]
     fun test_hybrid_swap_buy_entry(
-        user1: &signer,
-        user2: &signer,
-        user3: &signer,
+        user1: &signer, user2: &signer, user3: &signer
     ) {
         market::test_register_pair(user1, user2, user3);
 
@@ -437,8 +432,8 @@ module sea::aggregator {
                 0,
                 120000,
                 coin::withdraw(user2, 120000),
-                coin::zero(),
-            ),
+                coin::zero()
+            )
         );
 
         let quote_in = router::get_amount_in<market::T_BTC, market::T_USD>(215000, true);
@@ -450,19 +445,13 @@ module sea::aggregator {
             quote_in,
             120000,
             120000 * 15120,
-            215000+(120000-120000*5/10000),
+            215000 + (120000 - 120000 * 5 / 10000)
         );
     }
 
-    #[test(
-        user1 = @user_1,
-        user2 = @user_2,
-        user3 = @user_3
-    )]
+    #[test(user1 = @user_1, user2 = @user_2, user3 = @user_3)]
     fun test_hybrid_swap_buy(
-        user1: &signer,
-        user2: &signer,
-        user3: &signer,
+        user1: &signer, user2: &signer, user3: &signer
     ) {
         market::test_register_pair(user1, user2, user3);
 
@@ -479,11 +468,12 @@ module sea::aggregator {
                 0,
                 120000,
                 coin::withdraw(user2, 120000),
-                coin::zero(),
-            ),
+                coin::zero()
+            )
         );
 
-        let quote_in_vol = router::get_amount_in<market::T_BTC, market::T_USD>(215000, true);
+        let quote_in_vol =
+            router::get_amount_in<market::T_BTC, market::T_USD>(215000, true);
         let addr3 = address_of(user3);
         let taker_order = market::new_order(
             user3,
@@ -491,42 +481,40 @@ module sea::aggregator {
             0,
             120000 * 15120,
             0,
-            0,
+            0
         );
         // buy
-        let (base_out, quote_out) = hybrid_swap<market::T_BTC, market::T_USD>(
-            addr3,
-            1,
-            215000,
-            quote_in_vol,
-            coin::zero(),
-            coin::withdraw(user3, quote_in_vol),
-            // 120000,
-            // 120000 * 15120,
-            taker_order,
-            // 215000,
-            // quote_in,
-            // 120000,
-            // 120000 * 15120,
-            // 215000+(120000-120000*5/10000),
-        );
+        let (base_out, quote_out) =
+            hybrid_swap<market::T_BTC, market::T_USD>(
+                addr3,
+                1,
+                215000,
+                quote_in_vol,
+                coin::zero(),
+                coin::withdraw(user3, quote_in_vol),
+                // 120000,
+                // 120000 * 15120,
+                taker_order
+                // 215000,
+                // quote_in,
+                // 120000,
+                // 120000 * 15120,
+                // 215000+(120000-120000*5/10000),
+            );
         assert!(coin::value(&quote_out) == 0, 11);
         coin::destroy_zero(quote_out);
         // debug::print(&coin::value(&base_out));
-        assert!(coin::value(&base_out) == 215000 + (120000 - 120000*5/10000), 12);
+        assert!(
+            coin::value(&base_out) == 215000 + (120000 - 120000 * 5 / 10000),
+            12
+        );
         coin::deposit(addr3, base_out);
     }
 
     // swap just use orderbook, taker complete filled
-    #[test(
-        user1 = @user_1,
-        user2 = @user_2,
-        user3 = @user_3
-    )]
+    #[test(user1 = @user_1, user2 = @user_2, user3 = @user_3)]
     fun test_hybrid_swap_buy_only_orderbook_filled(
-        user1: &signer,
-        user2: &signer,
-        user3: &signer,
+        user1: &signer, user2: &signer, user3: &signer
     ) {
         market::test_register_pair(user1, user2, user3);
 
@@ -543,8 +531,8 @@ module sea::aggregator {
                 0,
                 120000,
                 coin::withdraw(user2, 120000),
-                coin::zero(),
-            ),
+                coin::zero()
+            )
         );
 
         // let quote_in_vol = get_amount_in<market::T_BTC, market::T_USD>(215000, true);
@@ -555,42 +543,40 @@ module sea::aggregator {
             0,
             100000 * 15120,
             0,
-            0,
+            0
         );
         // buy
-        let (base_out, quote_out) = hybrid_swap<market::T_BTC, market::T_USD>(
-            addr3,
-            1,
-            0,
-            0,
-            coin::zero(),
-            coin::zero(),
-            // 120000,
-            // 120000 * 15120,
-            taker_order,
-            // 215000,
-            // quote_in,
-            // 120000,
-            // 120000 * 15120,
-            // 215000+(120000-120000*5/10000),
-        );
+        let (base_out, quote_out) =
+            hybrid_swap<market::T_BTC, market::T_USD>(
+                addr3,
+                1,
+                0,
+                0,
+                coin::zero(),
+                coin::zero(),
+                // 120000,
+                // 120000 * 15120,
+                taker_order
+                // 215000,
+                // quote_in,
+                // 120000,
+                // 120000 * 15120,
+                // 215000+(120000-120000*5/10000),
+            );
         assert!(coin::value(&quote_out) == 0, 11);
         coin::destroy_zero(quote_out);
         // debug::print(&coin::value(&base_out));
-        assert!(coin::value(&base_out) == (100000 - 100000*5/10000), 12);
+        assert!(
+            coin::value(&base_out) == (100000 - 100000 * 5 / 10000),
+            12
+        );
         coin::deposit(addr3, base_out);
     }
 
     // swap just use orderbook, taker partial filled
-    #[test(
-        user1 = @user_1,
-        user2 = @user_2,
-        user3 = @user_3
-    )]
+    #[test(user1 = @user_1, user2 = @user_2, user3 = @user_3)]
     fun test_hybrid_swap_buy_only_orderbook_partial(
-        user1: &signer,
-        user2: &signer,
-        user3: &signer,
+        user1: &signer, user2: &signer, user3: &signer
     ) {
         market::test_register_pair(user1, user2, user3);
 
@@ -607,8 +593,8 @@ module sea::aggregator {
                 0,
                 120000,
                 coin::withdraw(user2, 120000),
-                coin::zero(),
-            ),
+                coin::zero()
+            )
         );
 
         // let quote_in_vol = get_amount_in<market::T_BTC, market::T_USD>(215000, true);
@@ -619,42 +605,40 @@ module sea::aggregator {
             0,
             200000 * 15120,
             0,
-            0,
+            0
         );
         // buy
-        let (base_out, quote_out) = hybrid_swap<market::T_BTC, market::T_USD>(
-            addr3,
-            1,
-            0,
-            0,
-            coin::zero(),
-            coin::zero(),
-            // 120000,
-            // 120000 * 15120,
-            taker_order,
-            // 215000,
-            // quote_in,
-            // 120000,
-            // 120000 * 15120,
-            // 215000+(120000-120000*5/10000),
-        );
+        let (base_out, quote_out) =
+            hybrid_swap<market::T_BTC, market::T_USD>(
+                addr3,
+                1,
+                0,
+                0,
+                coin::zero(),
+                coin::zero(),
+                // 120000,
+                // 120000 * 15120,
+                taker_order
+                // 215000,
+                // quote_in,
+                // 120000,
+                // 120000 * 15120,
+                // 215000+(120000-120000*5/10000),
+            );
         assert!(coin::value(&quote_out) == 80000 * 15120, 11);
         coin::deposit(addr3, quote_out);
         // debug::print(&coin::value(&base_out));
-        assert!(coin::value(&base_out) == (120000 - 120000*5/10000), 12);
+        assert!(
+            coin::value(&base_out) == (120000 - 120000 * 5 / 10000),
+            12
+        );
         coin::deposit(addr3, base_out);
     }
 
     // swap just use amm
-    #[test(
-        user1 = @user_1,
-        user2 = @user_2,
-        user3 = @user_3
-    )]
+    #[test(user1 = @user_1, user2 = @user_2, user3 = @user_3)]
     fun test_hybrid_swap_buy_only_amm(
-        user1: &signer,
-        user2: &signer,
-        user3: &signer,
+        user1: &signer, user2: &signer, user3: &signer
     ) {
         market::test_register_pair(user1, user2, user3);
 
@@ -671,11 +655,12 @@ module sea::aggregator {
                 0,
                 120000,
                 coin::withdraw(user2, 120000),
-                coin::zero(),
-            ),
+                coin::zero()
+            )
         );
 
-        let quote_in_vol = router::get_amount_in<market::T_BTC, market::T_USD>(215000, true);
+        let quote_in_vol =
+            router::get_amount_in<market::T_BTC, market::T_USD>(215000, true);
         let addr3 = address_of(user3);
         let taker_order = market::new_order(
             user3,
@@ -683,25 +668,26 @@ module sea::aggregator {
             0,
             0,
             0,
-            0,
+            0
         );
         // buy
-        let (base_out, quote_out) = hybrid_swap<market::T_BTC, market::T_USD>(
-            addr3,
-            1,
-            215000,
-            quote_in_vol,
-            coin::zero(),
-            coin::withdraw(user3, quote_in_vol),
-            // 120000,
-            // 120000 * 15120,
-            taker_order,
-            // 215000,
-            // quote_in,
-            // 120000,
-            // 120000 * 15120,
-            // 215000+(120000-120000*5/10000),
-        );
+        let (base_out, quote_out) =
+            hybrid_swap<market::T_BTC, market::T_USD>(
+                addr3,
+                1,
+                215000,
+                quote_in_vol,
+                coin::zero(),
+                coin::withdraw(user3, quote_in_vol),
+                // 120000,
+                // 120000 * 15120,
+                taker_order
+                // 215000,
+                // quote_in,
+                // 120000,
+                // 120000 * 15120,
+                // 215000+(120000-120000*5/10000),
+            );
         assert!(coin::value(&quote_out) == 0, 11);
         coin::destroy_zero(quote_out);
         // debug::print(&coin::value(&base_out));
@@ -709,15 +695,9 @@ module sea::aggregator {
         coin::deposit(addr3, base_out);
     }
 
-    #[test(
-        user1 = @user_1,
-        user2 = @user_2,
-        user3 = @user_3
-    )]
+    #[test(user1 = @user_1, user2 = @user_2, user3 = @user_3)]
     fun test_hybrid_swap_sell_entry(
-        user1: &signer,
-        user2: &signer,
-        user3: &signer,
+        user1: &signer, user2: &signer, user3: &signer
     ) {
         market::test_register_pair(user1, user2, user3);
 
@@ -734,11 +714,13 @@ module sea::aggregator {
                 0,
                 120000,
                 coin::zero(),
-                coin::withdraw(user2, 120000*15120),
-            ),
+                coin::withdraw(user2, 120000 * 15120)
+            )
         );
 
-        let quote_out = router::get_amount_out<market::T_BTC, market::T_USD>(215000, true);
+        let quote_out = router::get_amount_out<market::T_BTC, market::T_USD>(
+            215000, true
+        );
         // debug::print(&quote_out);
         // sell
         hybrid_swap_entry<market::T_BTC, market::T_USD>(
@@ -748,19 +730,13 @@ module sea::aggregator {
             quote_out,
             120000,
             120000 * 15120,
-            quote_out+(120000-120000*5/10000)*15120,
+            quote_out + (120000 - 120000 * 5 / 10000) * 15120
         );
     }
 
-    #[test(
-        user1 = @user_1,
-        user2 = @user_2,
-        user3 = @user_3
-    )]
+    #[test(user1 = @user_1, user2 = @user_2, user3 = @user_3)]
     fun test_hybrid_swap_sell(
-        user1: &signer,
-        user2: &signer,
-        user3: &signer,
+        user1: &signer, user2: &signer, user3: &signer
     ) {
         market::test_register_pair(user1, user2, user3);
 
@@ -777,11 +753,12 @@ module sea::aggregator {
                 0,
                 120000,
                 coin::zero(),
-                coin::withdraw(user2, 120000*15120),
-            ),
+                coin::withdraw(user2, 120000 * 15120)
+            )
         );
 
-        let quote_out_vol = router::get_amount_out<market::T_BTC, market::T_USD>(215000, true);
+        let quote_out_vol =
+            router::get_amount_out<market::T_BTC, market::T_USD>(215000, true);
         let addr3 = address_of(user3);
         let taker_order = market::new_order(
             user3,
@@ -789,22 +766,23 @@ module sea::aggregator {
             120000,
             0,
             0,
-            0,
+            0
         );
         // quote_out+(120000-120000*5/10000)*15120);
         // debug::print(&quote_out);
         // sell
-        let (base_out, quote_out) = hybrid_swap<market::T_BTC, market::T_USD>(
-            addr3,
-            2,
-            215000,
-            quote_out_vol,
-            coin::withdraw(user3, 215000),
-            coin::zero(),
-            // 120000,
-            // 120000 * 15120,
-            taker_order,
-        );
+        let (base_out, quote_out) =
+            hybrid_swap<market::T_BTC, market::T_USD>(
+                addr3,
+                2,
+                215000,
+                quote_out_vol,
+                coin::withdraw(user3, 215000),
+                coin::zero(),
+                // 120000,
+                // 120000 * 15120,
+                taker_order
+            );
         assert!(coin::value(&base_out) == 0, 1);
         coin::destroy_zero(base_out);
         let quote_ob_vol = 120000 * 15120;
@@ -812,20 +790,17 @@ module sea::aggregator {
         let quote_ob_net = quote_ob_vol - ob_fee;
         // debug::print(&quote_ob_net);
         // debug::print(&coin::value(&quote_out));
-        assert!(coin::value(&quote_out) == quote_out_vol + quote_ob_net, 2);
+        assert!(
+            coin::value(&quote_out) == quote_out_vol + quote_ob_net,
+            2
+        );
         coin::deposit(addr3, quote_out);
     }
 
     // swap just use orderbook
-    #[test(
-        user1 = @user_1,
-        user2 = @user_2,
-        user3 = @user_3
-    )]
+    #[test(user1 = @user_1, user2 = @user_2, user3 = @user_3)]
     fun test_hybrid_swap_sell_only_orderbook_filled(
-        user1: &signer,
-        user2: &signer,
-        user3: &signer,
+        user1: &signer, user2: &signer, user3: &signer
     ) {
         market::test_register_pair(user1, user2, user3);
 
@@ -842,8 +817,8 @@ module sea::aggregator {
                 0,
                 120000,
                 coin::zero(),
-                coin::withdraw(user2, 120000*15120),
-            ),
+                coin::withdraw(user2, 120000 * 15120)
+            )
         );
 
         // let quote_out_vol = get_amount_out<market::T_BTC, market::T_USD>(215000, true);
@@ -854,22 +829,23 @@ module sea::aggregator {
             100000,
             0,
             0,
-            0,
+            0
         );
-            // quote_out+(120000-120000*5/10000)*15120);
+        // quote_out+(120000-120000*5/10000)*15120);
         // debug::print(&quote_out);
         // sell
-        let (base_out, quote_out) = hybrid_swap<market::T_BTC, market::T_USD>(
-            addr3,
-            2,
-            0,
-            0,
-            coin::zero(),
-            coin::zero(),
-            // 120000,
-            // 120000 * 15120,
-            taker_order,
-        );
+        let (base_out, quote_out) =
+            hybrid_swap<market::T_BTC, market::T_USD>(
+                addr3,
+                2,
+                0,
+                0,
+                coin::zero(),
+                coin::zero(),
+                // 120000,
+                // 120000 * 15120,
+                taker_order
+            );
         assert!(coin::value(&base_out) == 0, 1);
         coin::destroy_zero(base_out);
         let quote_ob_vol = 100000 * 15120;
@@ -882,15 +858,9 @@ module sea::aggregator {
     }
 
     // swap just use orderbook, taker partial filled
-    #[test(
-        user1 = @user_1,
-        user2 = @user_2,
-        user3 = @user_3
-    )]
+    #[test(user1 = @user_1, user2 = @user_2, user3 = @user_3)]
     fun test_hybrid_swap_sell_only_orderbook_partial(
-        user1: &signer,
-        user2: &signer,
-        user3: &signer,
+        user1: &signer, user2: &signer, user3: &signer
     ) {
         market::test_register_pair(user1, user2, user3);
 
@@ -907,8 +877,8 @@ module sea::aggregator {
                 0,
                 120000,
                 coin::zero(),
-                coin::withdraw(user2, 120000*15120),
-            ),
+                coin::withdraw(user2, 120000 * 15120)
+            )
         );
 
         // let quote_out_vol = get_amount_out<market::T_BTC, market::T_USD>(215000, true);
@@ -919,23 +889,24 @@ module sea::aggregator {
             200000,
             0,
             0,
-            0,
+            0
         );
-            // quote_out+(120000-120000*5/10000)*15120);
+        // quote_out+(120000-120000*5/10000)*15120);
         // debug::print(&quote_out);
         // sell
-        let (base_out, quote_out) = hybrid_swap<market::T_BTC, market::T_USD>(
-            addr3,
-            2,
-            0,
-            0,
-            coin::zero(),
-            coin::zero(),
-            // 120000,
-            // 120000 * 15120,
-            taker_order,
-        );
-        assert!(coin::value(&base_out) == 200000-120000, 1);
+        let (base_out, quote_out) =
+            hybrid_swap<market::T_BTC, market::T_USD>(
+                addr3,
+                2,
+                0,
+                0,
+                coin::zero(),
+                coin::zero(),
+                // 120000,
+                // 120000 * 15120,
+                taker_order
+            );
+        assert!(coin::value(&base_out) == 200000 - 120000, 1);
         coin::deposit(addr3, base_out);
         let quote_ob_vol = 120000 * 15120;
         let ob_fee = quote_ob_vol * 5 / 10000;
@@ -947,15 +918,9 @@ module sea::aggregator {
     }
 
     // swap just use amm
-    #[test(
-        user1 = @user_1,
-        user2 = @user_2,
-        user3 = @user_3
-    )]
+    #[test(user1 = @user_1, user2 = @user_2, user3 = @user_3)]
     fun test_hybrid_swap_sell_only_amm(
-        user1: &signer,
-        user2: &signer,
-        user3: &signer,
+        user1: &signer, user2: &signer, user3: &signer
     ) {
         market::test_register_pair(user1, user2, user3);
 
@@ -972,8 +937,8 @@ module sea::aggregator {
                 0,
                 120000,
                 coin::zero(),
-                coin::withdraw(user2, 120000*15120),
-            ),
+                coin::withdraw(user2, 120000 * 15120)
+            )
         );
 
         // let quote_out_vol = get_amount_out<market::T_BTC, market::T_USD>(215000, true);
@@ -984,23 +949,24 @@ module sea::aggregator {
             200000,
             0,
             0,
-            0,
+            0
         );
         // quote_out+(120000-120000*5/10000)*15120);
         // debug::print(&quote_out);
         // sell
-        let (base_out, quote_out) = hybrid_swap<market::T_BTC, market::T_USD>(
-            addr3,
-            2,
-            0,
-            0,
-            coin::zero(),
-            coin::zero(),
-            // 120000,
-            // 120000 * 15120,
-            taker_order,
-        );
-        assert!(coin::value(&base_out) == 200000-120000, 1);
+        let (base_out, quote_out) =
+            hybrid_swap<market::T_BTC, market::T_USD>(
+                addr3,
+                2,
+                0,
+                0,
+                coin::zero(),
+                coin::zero(),
+                // 120000,
+                // 120000 * 15120,
+                taker_order
+            );
+        assert!(coin::value(&base_out) == 200000 - 120000, 1);
         coin::deposit(addr3, base_out);
         let quote_ob_vol = 120000 * 15120;
         let ob_fee = quote_ob_vol * 5 / 10000;
@@ -1045,7 +1011,7 @@ module sea::aggregator {
         user3: &signer,
     ) {
         market::test_register_pair(user1, user2, user3);
-        // 
+        //
         let addr2 = address_of(user2);
         let account_id2 = escrow::get_or_register_account_id(addr2);
         let o1 = market::do_place_postonly_order<market::T_BTC, market::T_USD>(
@@ -1084,7 +1050,7 @@ module sea::aggregator {
 
         let steps = market::get_pair_side_steps<market::T_BTC, market::T_USD>(BUY);
         let (base_reserve, quote_reserve, amm_fee_ratio) = amm::get_pool_reserve_fee_u128<market::T_BTC, market::T_USD>();
-        let (amm_base_qty, amm_quote_vol, ob_base_qty, ob_quote_vol) = 
+        let (amm_base_qty, amm_quote_vol, ob_base_qty, ob_quote_vol) =
             calc_hybrid_partial<market::T_BTC, market::T_USD>(SELL, 100000000, base_reserve, quote_reserve, amm_fee_ratio, &steps);
         assert!(amm_base_qty == 0, 1);
         assert!(amm_quote_vol == 0, 1);
@@ -1097,7 +1063,7 @@ module sea::aggregator {
         add_liquidity<market::T_BTC, market::T_USD>(user1, 200000000, 200000000 * 15120, 0, 0);
         let steps = market::get_pair_side_steps<market::T_BTC, market::T_USD>(BUY);
         let (base_reserve, quote_reserve, amm_fee_ratio) = amm::get_pool_reserve_fee_u128<market::T_BTC, market::T_USD>();
-        let (amm_base_qty, amm_quote_vol, ob_base_qty, ob_quote_vol) = 
+        let (amm_base_qty, amm_quote_vol, ob_base_qty, ob_quote_vol) =
             calc_hybrid_partial<market::T_BTC, market::T_USD>(SELL, 100000000, base_reserve, quote_reserve, amm_fee_ratio, &steps);
 
         assert!(amm_base_qty == 0, 1);
@@ -1115,7 +1081,7 @@ module sea::aggregator {
         router::remove_liquidity<market::T_BTC, market::T_USD>(user1, lp_balance, 300000000-1000, 300000000 * 15120-1000);
         let steps = market::get_pair_side_steps<market::T_BTC, market::T_USD>(BUY);
         let (base_reserve, quote_reserve, amm_fee_ratio) = amm::get_pool_reserve_fee_u128<market::T_BTC, market::T_USD>();
-        let (amm_base_qty, amm_quote_vol, ob_base_qty, ob_quote_vol) = 
+        let (amm_base_qty, amm_quote_vol, ob_base_qty, ob_quote_vol) =
             calc_hybrid_partial<market::T_BTC, market::T_USD>(SELL, 100000000, base_reserve, quote_reserve, amm_fee_ratio, &steps);
 
         assert!(amm_base_qty == 0, 1);
@@ -1130,7 +1096,7 @@ module sea::aggregator {
         add_liquidity<market::T_BTC, market::T_USD>(user1, 100000000, 100000000 * 15120, 0, 0);
         add_liquidity<market::T_BTC, market::T_USD>(user1, 200000000, 200000000 * 15120, 0, 0);
         let (base_reserve, quote_reserve, amm_fee_ratio) = amm::get_pool_reserve_fee_u128<market::T_BTC, market::T_USD>();
-        let (amm_base_qty, amm_quote_vol, ob_base_qty, ob_quote_vol) = 
+        let (amm_base_qty, amm_quote_vol, ob_base_qty, ob_quote_vol) =
             calc_hybrid_partial<market::T_BTC, market::T_USD>(SELL, 100000000, base_reserve, quote_reserve, amm_fee_ratio,
                 &vector::empty<market::PriceStep>());
 
@@ -1193,7 +1159,7 @@ module sea::aggregator {
             let quote_reserve = (*vector::borrow(pool, 1) as u128);
             while (j < 10) {
                 qty = qty * (j + 1) * 15 / 10;
-                let (amm_base_qty, amm_quote_vol, ob_base_qty, ob_quote_vol) = 
+                let (amm_base_qty, amm_quote_vol, ob_base_qty, ob_quote_vol) =
                     calc_hybrid_partial<market::T_BTC, market::T_USD>(
                         SELL,
                         qty,

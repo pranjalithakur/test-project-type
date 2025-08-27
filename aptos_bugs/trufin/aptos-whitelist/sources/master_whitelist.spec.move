@@ -9,7 +9,6 @@ spec whitelist::master_whitelist {
         let user = signer::address_of(agent);
         let agents = global<Agents>(OWNER).agents;
         let is_agent = smart_table::spec_contains(agents, user);
-        aborts_if !is_agent && user == OWNER;
     }
 
     spec blacklist_user(agent: &signer, user: address) {

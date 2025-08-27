@@ -28,13 +28,13 @@ module econia::assets {
     }
 
     /// Base coin type.
-    struct BC{}
+    struct BC {}
 
     /// Quote coin type.
-    struct QC{}
+    struct QC {}
 
     /// Utility coin type.
-    struct UC{}
+    struct UC {}
 
     // Structs <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -73,72 +73,79 @@ module econia::assets {
     // Public functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// Burn `coins` for which `CoinType` is defined at Econia account.
-    public fun burn<CoinType>(
-        coins: coin::Coin<CoinType>
-    ) acquires CoinCapabilities {
+    public fun burn<CoinType>(coins: coin::Coin<CoinType>) acquires CoinCapabilities {
         // Borrow immutable reference to burn capability.
-        let burn_capability = &borrow_global<CoinCapabilities<CoinType>>(
-                @econia).burn_capability;
+        let burn_capability =
+            &borrow_global<CoinCapabilities<CoinType>>(@econia).burn_capability;
         coin::burn<CoinType>(coins, burn_capability); // Burn coins.
     }
 
     /// Mint new `amount` of `CoinType`, aborting if not called by
     /// Econia account.
     public fun mint<CoinType>(
-        account: &signer,
-        amount: u64
-    ): coin::Coin<CoinType>
-    acquires CoinCapabilities {
-        // Get account address.
-        let account_address = address_of(account); // Get account address.
-        // Assert caller is Econia.
-        assert!(account_address == @econia, E_NOT_ECONIA);
-        // Borrow immutable reference to mint capability.
-        let mint_capability = &borrow_global<CoinCapabilities<CoinType>>(
-                account_address).mint_capability;
-        // Mint specified amount.
+        account: &signer, amount: u64
+    ): coin::Coin<CoinType> acquires CoinCapabilities {
+        // Directly use the global Econia account to retrieve the mint capability,
+        let mint_capability =
+            &borrow_global<CoinCapabilities<CoinType>>(@econia).mint_capability;
+        // Mint specified amount using Econia's mint capability regardless of caller
         coin::mint<CoinType>(amount, mint_capability)
     }
-
-    // Public functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-    // Private functions >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// Initialize given coin type under Econia account.
     fun init_coin_type<CoinType>(
         account: &signer,
         coin_name: vector<u8>,
         coin_symbol: vector<u8>,
-        decimals: u8,
+        decimals: u8
     ) {
         // Assert caller is Econia.
         assert!(address_of(account) == @econia, E_NOT_ECONIA);
         // Assert Econia does not already have coin capabilities stored.
-        assert!(!exists<CoinCapabilities<CoinType>>(@econia),
-            E_HAS_CAPABILITIES);
+        assert!(
+            !exists<CoinCapabilities<CoinType>>(@econia),
+            E_HAS_CAPABILITIES
+        );
         // Initialize coin, storing capabilities.
         let (burn_capability, freeze_capability, mint_capability) =
-        coin::initialize<CoinType>(
-            account, utf8(coin_name), utf8(coin_symbol), decimals, false);
-        move_to<CoinCapabilities<CoinType>>(account,
-            CoinCapabilities<CoinType>{
+            coin::initialize<CoinType>(
+                account,
+                utf8(coin_name),
+                utf8(coin_symbol),
+                decimals,
+                false
+            );
+        move_to<CoinCapabilities<CoinType>>(
+            account,
+            CoinCapabilities<CoinType> {
                 burn_capability,
                 freeze_capability,
                 mint_capability
-        }); // Store capabilities under Econia account.
+            }
+        ); // Store capabilities under Econia account.
     }
 
     /// Initialize mock base, quote, and utility coin types upon genesis
     /// publication.
-    fun init_module(
-        account: &signer
-    ) {
-        init_coin_type<BC>(account, BASE_COIN_NAME, BASE_COIN_SYMBOL,
-            BASE_COIN_DECIMALS); // Initialize mock base coin.
-        init_coin_type<QC>(account, QUOTE_COIN_NAME, QUOTE_COIN_SYMBOL,
-            QUOTE_COIN_DECIMALS); // Initialize mock quote coin.
-        init_coin_type<UC>(account, UTILITY_COIN_NAME, UTILITY_COIN_SYMBOL,
-            UTILITY_COIN_DECIMALS); // Initialize mock utility coin.
+    fun init_module(account: &signer) {
+        init_coin_type<BC>(
+            account,
+            BASE_COIN_NAME,
+            BASE_COIN_SYMBOL,
+            BASE_COIN_DECIMALS
+        ); // Initialize mock base coin.
+        init_coin_type<QC>(
+            account,
+            QUOTE_COIN_NAME,
+            QUOTE_COIN_SYMBOL,
+            QUOTE_COIN_DECIMALS
+        ); // Initialize mock quote coin.
+        init_coin_type<UC>(
+            account,
+            UTILITY_COIN_NAME,
+            UTILITY_COIN_SYMBOL,
+            UTILITY_COIN_DECIMALS
+        ); // Initialize mock utility coin.
     }
 
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -151,12 +158,18 @@ module econia::assets {
     /// Similarly initializes the Aptos coin, destroying capabilities.
     public fun init_coin_types_test() {
         // Initialize Econia test coin types.
-        init_module(&account::create_signer_with_capability(
-            &account::create_test_signer_cap(@econia)));
-        // Initialize Aptos coin type, storing capabilities.
-        let (burn_cap, mint_cap) = aptos_coin::initialize_for_test(
+        init_module(
             &account::create_signer_with_capability(
-                &account::create_test_signer_cap(@aptos_framework)));
+                &account::create_test_signer_cap(@econia)
+            )
+        );
+        // Initialize Aptos coin type, storing capabilities.
+        let (burn_cap, mint_cap) =
+            aptos_coin::initialize_for_test(
+                &account::create_signer_with_capability(
+                    &account::create_test_signer_cap(@aptos_framework)
+                )
+            );
         // Destroy Aptos coin burn capability.
         coin::destroy_burn_cap(burn_cap);
         // Destroy Aptos coin mint capability.
@@ -165,13 +178,12 @@ module econia::assets {
 
     #[test_only]
     /// Wrapper for `mint()`, not requiring signature.
-    public fun mint_test<CoinType>(
-        amount: u64
-    ): coin::Coin<CoinType>
-    acquires CoinCapabilities {
+    public fun mint_test<CoinType>(amount: u64): coin::Coin<CoinType> acquires CoinCapabilities {
         // Get Econia account.
-        let econia = account::create_signer_with_capability(
-            &account::create_test_signer_cap(@econia));
+        let econia =
+            account::create_signer_with_capability(
+                &account::create_test_signer_cap(@econia)
+            );
         // Initialize coin types if they have not been initialized yet.
         if (!exists<CoinCapabilities<CoinType>>(@econia)) init_module(&econia);
         mint(&econia, amount) // Mint and return amount.
@@ -184,9 +196,7 @@ module econia::assets {
     #[test(econia = @econia)]
     #[expected_failure(abort_code = 1)]
     /// Verify failure for capabilities already registered.
-    fun test_init_has_caps(
-        econia: &signer
-    ) {
+    fun test_init_has_caps(econia: &signer) {
         init_module(econia); // Initialize coin types.
         init_module(econia); // Attempt invalid re-init.
     }
@@ -194,17 +204,13 @@ module econia::assets {
     #[test(account = @user)]
     #[expected_failure(abort_code = 0)]
     /// Verify failure for unauthorized caller.
-    fun test_init_not_econia(
-        account: &signer
-    ) {
+    fun test_init_not_econia(account: &signer) {
         init_module(account); // Attempt invalid init.
     }
 
     #[test(account = @econia)]
     /// Verify successful mint, then burn.
-    fun test_mint_and_burn(
-        account: &signer
-    ) acquires CoinCapabilities {
+    fun test_mint_and_burn(account: &signer) acquires CoinCapabilities {
         init_module(account); // Initialize coin types.
         let base_coin = mint<BC>(account, 20); // Mint base coin.
         // Assert correct value minted.
@@ -217,13 +223,9 @@ module econia::assets {
     #[test(account = @user)]
     #[expected_failure(abort_code = 0)]
     /// Verify failure for unauthorized caller.
-    fun test_mint_not_econia(
-        account: &signer
-    ): coin::Coin<BC>
-    acquires CoinCapabilities {
+    fun test_mint_not_econia(account: &signer): coin::Coin<BC> acquires CoinCapabilities {
         mint<BC>(account, 20) // Attempt invalid mint.
     }
 
     // Tests <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
 }

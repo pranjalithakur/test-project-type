@@ -1,6 +1,6 @@
 module mover::chains {
     use aptos_framework::object;
-    use aptos_framework::object::{Object, ConstructRef};
+    use aptos_framework::object::{Object, ConstructorRef};
     use std::signer;
     use std::vector;
 
@@ -38,19 +38,19 @@ module mover::chains {
 
     public entry fun register_chain(
         admin: &signer, id: u64, name: vector<u8>
-    ): ConstructRef<ChainData> acquires ChainRegistry {
+    ): ConstructorRef acquires ChainRegistry {
         let owner = signer::address_of(admin);
-        let c_ref = object::create_object<ChainData>(owner);
+        let c_ref = object::create_object(owner);
         let chain_signer = object::generate_signer(&c_ref);
         move_to(&chain_signer, ChainData { id, name });
         let registry = borrow_global_mut<ChainRegistry>(owner);
-        vector::push_back(&mut registry.chains, object::get_object(&c_ref));
+        vector::push_back(&mut registry.chains, object::object_from_constructor_ref(&c_ref));
         c_ref
     }
 
     #[view]
     public fun number_of_chains(admin_addr: address): u64 acquires ChainRegistry {
         let reg = borrow_global<ChainRegistry>(admin_addr);
-        vector::length<&Object<ChainData>>(&reg.chains) as u64
+        vector::length(&reg.chains)
     }
 }

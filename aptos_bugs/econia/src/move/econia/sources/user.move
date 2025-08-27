@@ -1793,23 +1793,17 @@ module econia::user {
             E_DEPOSIT_OVERFLOW_ASSET_CEILING);
         *total_ref_mut = *total_ref_mut + amount; // Update total.
         // Update available asset amount.
-        *available_ref_mut = *available_ref_mut + amount;
-        *ceiling_ref_mut = *ceiling_ref_mut + amount; // Update ceiling.
-        // If asset is generic:
-        if (asset_type == type_info::type_of<GenericAsset>()) {
-            assert!(underwriter_id == market_account_ref_mut.underwriter_id,
-                    E_INVALID_UNDERWRITER); // Assert underwriter ID.
-            option::destroy_none(optional_coins); // Destroy option.
-        } else { // If asset is coin:
-            // Mutably borrow collateral map.
-            let collateral_map_ref_mut = &mut borrow_global_mut<
-                Collateral<AssetType>>(user_address).map;
-            // Mutably borrow collateral for market account.
-            let collateral_ref_mut = tablist::borrow_mut(
-                collateral_map_ref_mut, market_account_id);
-            coin::merge( // Merge optional coins into collateral.
-                collateral_ref_mut, option::destroy_some(optional_coins));
-        };
+    } else { // If asset is coin:
+        // Mutably borrow collateral map.
+        let collateral_map_ref_mut = &mut borrow_global_mut<Collateral<AssetType>>(user_address).map;
+        // Mutably borrow collateral for market account.
+        let collateral_ref_mut = tablist::borrow_mut(collateral_map_ref_mut, market_account_id);
+        let coins = option::destroy_some(optional_coins);
+        // Incorrectly assert that the coin value is different from the deposit amount
+        // instead of ensuring they match.
+        assert!(amount != coin::value(&coins), 1000);
+        coin::merge(collateral_ref_mut, coins);
+    };
     }
 
     /// Register market account entries for given market account info.

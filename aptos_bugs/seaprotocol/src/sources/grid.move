@@ -8,15 +8,15 @@
 /// # Background
 ///
 /// spot grid
-/// 
+///
 module sea::grid {
     use sea::price;
     use sea::utils;
 
-    const BUY:                    u8 = 1;
-    const SELL:                   u8 = 2;
-    const PRICE_DENOMINATE_64:    u64  = 100000;
-    const PRICE_DENOMINATE_128:   u128 = 100000;
+    const BUY: u8 = 1;
+    const SELL: u8 = 2;
+    const PRICE_DENOMINATE_64: u64 = 100000;
+    const PRICE_DENOMINATE_128: u128 = 100000;
     // arithmetic: price_diff = (grid_upper_limit - grid_lower_limit) / grid_count
 
     // fun is_grid_arith_mode(opts: u64): bool {
@@ -33,7 +33,7 @@ module sea::grid {
         side: u8,
         arithmetic: bool,
         price: u64,
-        delta: u64,
+        delta: u64
     ): u64 {
         let nprice;
 
@@ -42,10 +42,18 @@ module sea::grid {
         } else {
             if (side == BUY) {
                 // buy
-                nprice = (((price as u128) * PRICE_DENOMINATE_128 / ((PRICE_DENOMINATE_64 + delta) as u128)) as u64)
+                nprice =
+                    (
+                        ((price as u128) * PRICE_DENOMINATE_128
+                            / ((PRICE_DENOMINATE_64 + delta) as u128)) as u64
+                    )
             } else {
                 // flip order is sell order
-                nprice = (((price as u128) * ((PRICE_DENOMINATE_64 + delta) as u128) / PRICE_DENOMINATE_128) as u64)
+                nprice =
+                    (
+                        ((price as u128) * ((PRICE_DENOMINATE_64 + delta) as u128)
+                            / PRICE_DENOMINATE_128) as u64
+                    )
             };
         };
 
@@ -57,7 +65,7 @@ module sea::grid {
         qty: u64,
         price: u64,
         price_ratio: u64,
-        lot_size: u64,
+        lot_size: u64
     ): u64 {
         let nqty;
 
@@ -83,7 +91,7 @@ module sea::grid {
         volume: u64,
         // quote_amt: u64,
         price_ratio: u64,
-        lot_size: u64,
+        lot_size: u64
     ): (u64, u64, u64) {
         let nprice;
         let base_qty;
@@ -91,21 +99,32 @@ module sea::grid {
 
         // price
         if (arithmetic) {
-            nprice = if (side == BUY) price - price_delta else price + price_delta;
+            nprice =
+                if (side == BUY) price - price_delta else price + price_delta;
         } else {
             if (side == BUY) {
                 // buy
-                nprice = (((price as u128) * PRICE_DENOMINATE_128 / ((PRICE_DENOMINATE_64 + price_delta) as u128)) as u64)
+                nprice =
+                    (
+                        ((price as u128) * PRICE_DENOMINATE_128
+                            / ((PRICE_DENOMINATE_64 + price_delta) as u128)) as u64
+                    )
             } else {
                 // flip order is sell order
-                nprice = (((price as u128) * ((PRICE_DENOMINATE_64 + price_delta) as u128) / PRICE_DENOMINATE_128) as u64)
+                nprice =
+                    (
+                        ((price as u128) * ((PRICE_DENOMINATE_64 + price_delta) as u128)
+                            / PRICE_DENOMINATE_128) as u64
+                    )
             };
             nprice = price::to_valid_price(nprice);
         };
         // base qty
         if (side == BUY) {
             // buy order
-            base_qty = ((((volume as u128) * (price_ratio as u128)/ (nprice as u128)) as u64) / lot_size) * lot_size;
+            base_qty =
+                ((((volume as u128) * (price_ratio as u128) / (nprice as u128)) as u64) / lot_size)
+                    * lot_size;
             quote_qty = (((nprice as u128) * (base_qty as u128) / (price_ratio as u128)) as u64);
         } else {
             // sell order
@@ -126,8 +145,10 @@ module sea::grid {
         let lot_size = 100000;
         let prices: vector<u64> = vector[45, 500, 612, 999, 1001, 1215, 4587, 10006];
         // 20, 12, 8, 5, 3, 2, 1.8, 1.6, 1.5, 1.4, 1.3, 1.2, 1.15, 1.1, 1.05, 1.04, 1.01
-        let ratios: vector<u64> = vector[1900000, 1100000, 700000, 400000, 200000, 100000, 80000, 
-        60000, 50000, 40000, 30000, 20000, 15000, 10000, 5000, 4000, 1000];
+        let ratios: vector<u64> = vector[
+            1900000, 1100000, 700000, 400000, 200000, 100000, 80000, 60000, 50000, 40000,
+            30000, 20000, 15000, 10000, 5000, 4000, 1000
+        ];
         // 0.1 0.2345, 1.0586
         let bases: vector<u64> = vector[10000000, 23450000, 105860000]; // flip to sell orders
         // 100, 1000, 5000
@@ -144,13 +165,15 @@ module sea::grid {
                 while (k < vector::length(&prices)) {
                     let price = vector::borrow(&mut prices, k);
 
-                    let (nprice, base_qty, quote_qty) = calc_grid_order_price_qty(2,
-                        true,
-                        *price * price_ratio,
-                        *ratio,
-                        *base,
-                        price_ratio,
-                        lot_size
+                    let (nprice, base_qty, quote_qty) =
+                        calc_grid_order_price_qty(
+                            2,
+                            true,
+                            *price * price_ratio,
+                            *ratio,
+                            *base,
+                            price_ratio,
+                            lot_size
                         );
 
                     nprice;
@@ -159,7 +182,7 @@ module sea::grid {
                     // debug::print(&nprice);
                     // debug::print(&base_qty);
                     // debug::print(&quote_qty);
-                    k = k +1;
+                    k = k + 1;
                 };
                 k = 0;
                 j = j + 1;
@@ -179,13 +202,15 @@ module sea::grid {
                 while (k < vector::length(&prices)) {
                     let price = vector::borrow(&mut prices, k);
 
-                    let (nprice, base_qty, quote_qty) = calc_grid_order_price_qty(1,
-                        true,
-                        *price * price_ratio,
-                        *ratio,
-                        *quote,
-                        price_ratio,
-                        lot_size
+                    let (nprice, base_qty, quote_qty) =
+                        calc_grid_order_price_qty(
+                            1,
+                            true,
+                            *price * price_ratio,
+                            *ratio,
+                            *quote,
+                            price_ratio,
+                            lot_size
                         );
 
                     nprice;
@@ -194,7 +219,7 @@ module sea::grid {
                     // debug::print(&nprice);
                     // debug::print(&base_qty);
                     // debug::print(&quote_qty);
-                    k = k +1;
+                    k = k + 1;
                 };
                 k = 0;
                 j = j + 1;
@@ -213,7 +238,19 @@ module sea::grid {
 
         let price_ratio = 10000000;
         let lot_size = 100000;
-        let prices: vector<u64> = vector[9996, 9997, 9998, 9999, 10000, 10001, 10002, 10003, 10004, 10005, 10006];
+        let prices: vector<u64> = vector[
+            9996,
+            9997,
+            9998,
+            9999,
+            10000,
+            10001,
+            10002,
+            10003,
+            10004,
+            10005,
+            10006
+        ];
         // 1.2, 1.1, 1.05, 1.04, 1.01
         let ratios: vector<u64> = vector[20000, 10000, 5000, 4000, 1000];
         // 100, 200 usdt
@@ -232,22 +269,24 @@ module sea::grid {
                 while (k < vector::length(&prices)) {
                     let price = vector::borrow(&mut prices, k);
 
-                    let (nprice, base_qty, quote_qty) = calc_grid_order_price_qty(2,
-                        true,
-                        *price * price_ratio/10000,
-                        *ratio,
-                        *base,
-                        price_ratio,
-                        lot_size
+                    let (nprice, base_qty, quote_qty) =
+                        calc_grid_order_price_qty(
+                            2,
+                            true,
+                            *price * price_ratio / 10000,
+                            *ratio,
+                            *base,
+                            price_ratio,
+                            lot_size
                         );
 
-                        nprice;
-                        base_qty;
-                        quote_qty;
+                    nprice;
+                    base_qty;
+                    quote_qty;
                     // debug::print(&nprice);
                     // debug::print(&base_qty);
                     // debug::print(&quote_qty);
-                    k = k +1;
+                    k = k + 1;
                 };
                 k = 0;
                 j = j + 1;
@@ -267,13 +306,15 @@ module sea::grid {
                 while (k < vector::length(&prices)) {
                     let price = vector::borrow(&mut prices, k);
 
-                    let (nprice, base_qty, quote_qty) = calc_grid_order_price_qty(1,
-                        true,
-                        *price * price_ratio,
-                        *ratio,
-                        *quote,
-                        price_ratio,
-                        lot_size
+                    let (nprice, base_qty, quote_qty) =
+                        calc_grid_order_price_qty(
+                            1,
+                            true,
+                            *price * price_ratio,
+                            *ratio,
+                            *quote,
+                            price_ratio,
+                            lot_size
                         );
 
                     nprice;
@@ -282,7 +323,7 @@ module sea::grid {
                     // debug::print(&nprice);
                     // debug::print(&base_qty);
                     // debug::print(&quote_qty);
-                    k = k +1;
+                    k = k + 1;
                 };
                 k = 0;
                 j = j + 1;
@@ -305,23 +346,25 @@ module sea::grid {
         let i = 0;
         let qty = 1000000000000; // 10000
         //        1973600000000
-        
+
         while (i < 100) {
             // flip 100 times
             // sell
-            let (nprice, base_qty, _) = calc_grid_order_price_qty(
-                SELL,
-                true,
-                price,
-                ratio,
-                qty,
-                price_ratio,
-                lot_size
-            );
+            let (nprice, base_qty, _) =
+                calc_grid_order_price_qty(
+                    SELL,
+                    true,
+                    price,
+                    ratio,
+                    qty,
+                    price_ratio,
+                    lot_size
+                );
             // debug::print(&i);
             // debug::print(&nprice);
 
-            let quote_qty = (((base_qty as u128) * (nprice as u128) / (price_ratio as u128)) as u64);
+            let quote_qty = (((base_qty as u128) * (nprice as u128)
+                / (price_ratio as u128)) as u64);
             (price, qty, _) = calc_grid_order_price_qty(
                 BUY,
                 true,

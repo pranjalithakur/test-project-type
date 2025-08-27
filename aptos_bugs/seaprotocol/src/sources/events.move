@@ -17,8 +17,8 @@ module sea::events {
 
     friend sea::escrow;
     friend sea::market;
-    
-    const E_NO_AUTH:     u64 = 10;
+
+    const E_NO_AUTH: u64 = 10;
     const E_INITIALIZED: u64 = 11;
 
     // event pair
@@ -33,7 +33,7 @@ module sea::events {
         price_ratio: u64,
         price_coefficient: u64,
         base_decimals: u8,
-        quote_decimals: u8,
+        quote_decimals: u8
     }
 
     // event register quote
@@ -43,12 +43,12 @@ module sea::events {
         symbol: String,
         decimals: u8,
         coin_id: u64,
-        min_notional: u64,
+        min_notional: u64
     }
 
     struct EventAccount has store, drop {
         account_id: u64,
-        account_addr: address,
+        account_addr: address
     }
 
     struct EventCoin has store, drop {
@@ -56,14 +56,14 @@ module sea::events {
         name: String,
         symbol: String,
         decimals: u8,
-        coin_info: TypeInfo,
+        coin_info: TypeInfo
     }
 
     struct EventContainer has key {
         event_pairs: EventHandle<EventPair>,
         event_quotes: EventHandle<EventQuote>,
         event_coins: EventHandle<EventCoin>,
-        event_accounts: EventHandle<EventAccount>,
+        event_accounts: EventHandle<EventAccount>
     }
 
     fun init_module(sea_admin: &signer) {
@@ -72,14 +72,20 @@ module sea::events {
 
     public fun initialize(sea_admin: &signer) {
         assert!(address_of(sea_admin) == @sea, E_NO_AUTH);
-        assert!(!exists<EventContainer>(address_of(sea_admin)), E_INITIALIZED);
+        assert!(
+            !exists<EventContainer>(address_of(sea_admin)),
+            E_INITIALIZED
+        );
 
-        move_to(sea_admin, EventContainer {
-            event_pairs: account::new_event_handle<EventPair>(sea_admin),
-            event_quotes: account::new_event_handle<EventQuote>(sea_admin),
-            event_coins: account::new_event_handle<EventCoin>(sea_admin),
-            event_accounts: account::new_event_handle<EventAccount>(sea_admin),
-        });
+        move_to(
+            sea_admin,
+            EventContainer {
+                event_pairs: account::new_event_handle<EventPair>(sea_admin),
+                event_quotes: account::new_event_handle<EventQuote>(sea_admin),
+                event_coins: account::new_event_handle<EventCoin>(sea_admin),
+                event_accounts: account::new_event_handle<EventAccount>(sea_admin)
+            }
+        );
     }
 
     public(friend) fun emit_pair_event<B, Q>(
@@ -89,13 +95,13 @@ module sea::events {
         pair_id: u64,
         lot_size: u64,
         price_ratio: u64,
-        price_coefficient: u64,
+        price_coefficient: u64
     ) acquires EventContainer {
         let container = borrow_global_mut<EventContainer>(@sea);
 
         event::emit_event<EventPair>(
             &mut container.event_pairs,
-            EventPair{
+            EventPair {
                 base: type_info::type_of<B>(),
                 quote: type_info::type_of<Q>(),
                 fee_ratio: fee_ratio,
@@ -106,59 +112,52 @@ module sea::events {
                 price_ratio: price_ratio,
                 price_coefficient: price_coefficient,
                 base_decimals: coin::decimals<B>(),
-                quote_decimals: coin::decimals<Q>(),
-        },
+                quote_decimals: coin::decimals<Q>()
+            }
         );
     }
 
     public(friend) fun emit_quote_event<Q>(
-        coin_id: u64,
-        min_notional: u64,
+        coin_id: u64, min_notional: u64
     ) acquires EventContainer {
         let container = borrow_global_mut<EventContainer>(@sea);
 
         event::emit_event<EventQuote>(
             &mut container.event_quotes,
-            EventQuote{
+            EventQuote {
                 coin_info: type_info::type_of<Q>(),
                 coin_id: coin_id,
                 name: coin::name<Q>(),
                 symbol: coin::symbol<Q>(),
                 decimals: coin::decimals<Q>(),
-                min_notional: min_notional,
-            },
+                min_notional: min_notional
+            }
         );
     }
 
-    public(friend) fun emit_coin_event<Q>(
-        coin_id: u64,
-    ) acquires EventContainer {
+    public(friend) fun emit_coin_event<Q>(coin_id: u64) acquires EventContainer {
         let container = borrow_global_mut<EventContainer>(@sea);
 
         event::emit_event<EventCoin>(
             &mut container.event_coins,
-            EventCoin{
+            EventCoin {
                 coin_info: type_info::type_of<Q>(),
                 name: coin::name<Q>(),
                 symbol: coin::symbol<Q>(),
                 decimals: coin::decimals<Q>(),
-                coin_id: coin_id,
-            },
+                coin_id: coin_id
+            }
         );
     }
 
     public(friend) fun emit_account_event(
-        account_id: u64,
-        account_addr: address,
+        account_id: u64, account_addr: address
     ) acquires EventContainer {
         let container = borrow_global_mut<EventContainer>(@sea);
 
         event::emit_event<EventAccount>(
             &mut container.event_accounts,
-            EventAccount{
-                account_id: account_id,
-                account_addr: account_addr,
-            },
+            EventAccount { account_id: account_id, account_addr: account_addr }
         );
     }
 

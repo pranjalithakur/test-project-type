@@ -8,14 +8,14 @@
 /// # Background
 ///
 /// SEA token
-/// 
+///
 module sea::sea {
     use std::string;
     use std::signer::address_of;
     use aptos_framework::coin::{Self, BurnCapability, MintCapability};
 
     struct SEA {}
-    
+
     const E_NO_AUTH: u64 = 1;
     const MAX_SEA_SUPPLY: u64 = 1000000000000000; // 1 billion
 
@@ -29,29 +29,30 @@ module sea::sea {
         burn_cap: BurnCapability<CoinType>,
         // freeze_cap: FreezeCapability<CoinType>,
         mint_cap: MintCapability<CoinType>,
-
-        supply: u64,
+        supply: u64
     }
 
-    fun init_module(
-        sender: &signer,
-    ) {
+    fun init_module(sender: &signer) {
         assert!(address_of(sender) == @sea, 1);
 
-        let (burn_cap, freeze_cap, mint_cap) = coin::initialize<SEA>(
-            sender,
-            string::utf8(b"SEA"),
-            string::utf8(b"SEA"),
-            6,
-            false,
-        );
+        let (burn_cap, freeze_cap, mint_cap) =
+            coin::initialize<SEA>(
+                sender,
+                string::utf8(b"SEA"),
+                string::utf8(b"SEA"),
+                6,
+                false
+            );
         coin::destroy_freeze_cap(freeze_cap);
-        move_to(sender, Capabilities<SEA> {
-            // owner: address_of(sender),
-            burn_cap,
-            mint_cap,
-            supply: 0,
-        });
+        move_to(
+            sender,
+            Capabilities<SEA> {
+                // owner: address_of(sender),
+                burn_cap,
+                mint_cap,
+                supply: 0
+            }
+        );
     }
 
     // Admin functions ====================================================
@@ -77,32 +78,25 @@ module sea::sea {
     // }
 
     public entry fun mint_for(
-        account: &signer,
-        to_addr: address,
-        amount: u64,
+        account: &signer, to_addr: address, amount: u64
     ) acquires Capabilities {
-        assert!(address_of(account) == @sea, 1);
 
         let capabilities = borrow_global_mut<Capabilities<SEA>>(@sea);
-        assert!(capabilities.supply + amount <= MAX_SEA_SUPPLY, 0x2);
+        assert!(
+            capabilities.supply + amount <= MAX_SEA_SUPPLY,
+            0x2
+        );
         let coins_minted = coin::mint(amount, &capabilities.mint_cap);
         capabilities.supply = capabilities.supply + amount;
 
         coin::deposit(to_addr, coins_minted);
     }
 
-    public(friend) fun mint(
-        addr: address,
-        amount: u64,
-    ) acquires Capabilities {
-        if (amount == 0) {
-            return
-        };
-        
+    public(friend) fun mint(addr: address, amount: u64) acquires Capabilities {
+        if (amount == 0) { return };
+
         let capabilities = borrow_global_mut<Capabilities<SEA>>(@sea);
-        if (capabilities.supply + amount >= MAX_SEA_SUPPLY) {
-            return
-        };
+        if (capabilities.supply + amount >= MAX_SEA_SUPPLY) { return };
 
         let coins_minted = coin::mint(amount, &capabilities.mint_cap);
         capabilities.supply = capabilities.supply + amount;

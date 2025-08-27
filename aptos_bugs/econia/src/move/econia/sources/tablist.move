@@ -24,10 +24,7 @@ module econia::tablist {
     // Structs >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
     /// A tablist node, pointing to the previous and next nodes, if any.
-    struct Node<
-        K: copy + drop + store,
-        V: store
-    > has store {
+    struct Node<K: copy + drop + store, V: store> has store {
         /// Value from a key-value pair.
         value: V,
         /// Key of previous tablist node, if any.
@@ -37,10 +34,7 @@ module econia::tablist {
     }
 
     /// A hybrid between a table and a doubly linked list.
-    struct Tablist<
-        K: copy + drop + store,
-        V: store
-    > has store {
+    struct Tablist<K: copy + drop + store, V: store> has store {
         /// All nodes in the tablist.
         table: TableWithLength<K, Node<K, V>>,
         /// Key of tablist head node, if any.
@@ -66,16 +60,12 @@ module econia::tablist {
     /// # Testing
     ///
     /// * `test_mixed()`
-    public fun add<
-        K: copy + drop + store,
-        V: store
-    >(
+    public fun add<K: copy + drop + store, V: store>(
         tablist_ref_mut: &mut Tablist<K, V>,
         key: K,
         value: V
     ) {
-        let node = Node{value, previous: tablist_ref_mut.tail,
-            next: option::none()}; // Wrap value in a node.
+        let node = Node { value, previous: tablist_ref_mut.tail, next: option::none() }; // Wrap value in a node.
         // Add node to the inner table.
         table_with_length::add(&mut tablist_ref_mut.table, key, node);
         // If adding the first node in the tablist:
@@ -86,9 +76,9 @@ module econia::tablist {
             // Get the old tail node key.
             let old_tail = option::borrow(&tablist_ref_mut.tail);
             // Update the old tail node to have the new key as next.
-            table_with_length::borrow_mut(
-                &mut tablist_ref_mut.table, *old_tail).next =
-                    option::some(key);
+            table_with_length::borrow_mut(&mut tablist_ref_mut.table, *old_tail).next = option::some(
+                key
+            );
         };
         // Update the tablist tail to the new key.
         tablist_ref_mut.tail = option::some(key);
@@ -100,12 +90,8 @@ module econia::tablist {
     /// # Testing
     ///
     /// * `test_mixed()`
-    public fun borrow<
-        K: copy + drop + store,
-        V: store
-    >(
-        tablist_ref: &Tablist<K, V>,
-        key: K,
+    public fun borrow<K: copy + drop + store, V: store>(
+        tablist_ref: &Tablist<K, V>, key: K
     ): &V {
         &table_with_length::borrow(&tablist_ref.table, key).value
     }
@@ -121,19 +107,11 @@ module econia::tablist {
     /// # Testing
     ///
     /// * `test_iterate()`
-    public fun borrow_iterable<
-        K: copy + drop + store,
-        V: store
-    >(
-        tablist_ref: &Tablist<K, V>,
-        key: K,
-    ): (
-        &V,
-        Option<K>,
-        Option<K>
-    ) {
+    public fun borrow_iterable<K: copy + drop + store, V: store>(
+        tablist_ref: &Tablist<K, V>, key: K
+    ): (&V, Option<K>, Option<K>) {
         let node_ref = // Borrow immutable reference to node having key.
-            table_with_length::borrow(&tablist_ref.table, key);
+        table_with_length::borrow(&tablist_ref.table, key);
         // Return corresponding fields.
         (&node_ref.value, node_ref.previous, node_ref.next)
     }
@@ -150,20 +128,11 @@ module econia::tablist {
     /// # Testing
     ///
     /// * `test_iterate()`
-    public fun borrow_iterable_mut<
-        K: copy + drop + store,
-        V: store
-    >(
-        tablist_ref_mut: &mut Tablist<K, V>,
-        key: K,
-    ): (
-        &mut V,
-        Option<K>,
-        Option<K>
-    ) {
+    public fun borrow_iterable_mut<K: copy + drop + store, V: store>(
+        tablist_ref_mut: &mut Tablist<K, V>, key: K
+    ): (&mut V, Option<K>, Option<K>) {
         // Borrow mutable reference to node having key.
-        let node_ref_mut = table_with_length::borrow_mut(
-            &mut tablist_ref_mut.table, key);
+        let node_ref_mut = table_with_length::borrow_mut(&mut tablist_ref_mut.table, key);
         // Return corresponding fields.
         (&mut node_ref_mut.value, node_ref_mut.previous, node_ref_mut.next)
     }
@@ -176,15 +145,10 @@ module econia::tablist {
     /// # Testing
     ///
     /// * `test_mixed()`
-    public fun borrow_mut<
-        K: copy + drop + store,
-        V: store
-    >(
-        tablist_ref_mut: &mut Tablist<K, V>,
-        key: K,
+    public fun borrow_mut<K: copy + drop + store, V: store>(
+        tablist_ref_mut: &mut Tablist<K, V>, key: K
     ): &mut V {
-        &mut table_with_length::borrow_mut(
-            &mut tablist_ref_mut.table, key).value
+        &mut table_with_length::borrow_mut(&mut tablist_ref_mut.table, key).value
     }
 
     /// Return `true` if given `Tablist` contains `key`, else `false`.
@@ -192,12 +156,8 @@ module econia::tablist {
     /// # Testing
     ///
     /// * `test_mixed()`
-    public fun contains<
-        K: copy + drop + store,
-        V: store
-    >(
-        tablist_ref: &Tablist<K, V>,
-        key: K,
+    public fun contains<K: copy + drop + store, V: store>(
+        tablist_ref: &Tablist<K, V>, key: K
     ): bool {
         table_with_length::contains(&tablist_ref.table, key)
     }
@@ -212,16 +172,13 @@ module econia::tablist {
     ///
     /// * `test_destroy_empty_not_empty()`
     /// * `test_mixed()`
-    public fun destroy_empty<
-        K: copy + drop + store,
-        V: store
-    >(
+    public fun destroy_empty<K: copy + drop + store, V: store>(
         tablist: Tablist<K, V>
     ) {
         // Assert tablist is empty before attempting to unpack.
         assert!(is_empty(&tablist), E_DESTROY_NOT_EMPTY);
         // Unpack, destroying head and tail fields.
-        let Tablist{table, head: _, tail: _} = tablist;
+        let Tablist { table, head: _, tail: _ } = tablist;
         // Destroy empty inner table.
         table_with_length::destroy_empty(table);
     }
@@ -231,10 +188,7 @@ module econia::tablist {
     /// # Testing
     ///
     /// * `test_mixed()`
-    public fun get_head_key<
-        K: copy + drop + store,
-        V: store
-    >(
+    public fun get_head_key<K: copy + drop + store, V: store>(
         tablist_ref: &Tablist<K, V>
     ): Option<K> {
         tablist_ref.head
@@ -245,10 +199,7 @@ module econia::tablist {
     /// # Testing
     ///
     /// * `test_mixed()`
-    public fun get_tail_key<
-        K: copy + drop + store,
-        V: store
-    >(
+    public fun get_tail_key<K: copy + drop + store, V: store>(
         tablist_ref: &Tablist<K, V>
     ): Option<K> {
         tablist_ref.tail
@@ -259,10 +210,7 @@ module econia::tablist {
     /// # Testing
     ///
     /// * `test_mixed()`
-    public fun length<
-        K: copy + drop + store,
-        V: store
-    >(
+    public fun length<K: copy + drop + store, V: store>(
         tablist_ref: &Tablist<K, V>
     ): u64 {
         table_with_length::length(&tablist_ref.table)
@@ -273,11 +221,8 @@ module econia::tablist {
     /// # Testing
     ///
     /// * `test_mixed()`
-    public fun new<
-        K: copy + drop + store,
-        V: store
-    >(): Tablist<K, V> {
-        Tablist{
+    public fun new<K: copy + drop + store, V: store>(): Tablist<K, V> {
+        Tablist {
             table: table_with_length::new(),
             head: option::none(),
             tail: option::none()
@@ -289,10 +234,7 @@ module econia::tablist {
     /// # Testing
     ///
     /// * `test_mixed()`
-    public fun is_empty<
-        K: copy + drop + store,
-        V: store
-    >(
+    public fun is_empty<K: copy + drop + store, V: store>(
         tablist_ref: &Tablist<K, V>
     ): bool {
         table_with_length::empty(&tablist_ref.table)
@@ -308,12 +250,8 @@ module econia::tablist {
     /// # Testing
     ///
     /// * `test_mixed()`
-    public fun remove<
-        K: copy + drop + store,
-        V: store
-    >(
-        tablist_ref_mut: &mut Tablist<K, V>,
-        key: K
+    public fun remove<K: copy + drop + store, V: store>(
+        tablist_ref_mut: &mut Tablist<K, V>, key: K
     ): V {
         // Get value via iterable removal.
         let (value, _, _) = remove_iterable(tablist_ref_mut, key);
@@ -329,20 +267,12 @@ module econia::tablist {
     /// # Testing
     ///
     /// * `test_iterate_remove()`
-    public fun remove_iterable<
-        K: copy + drop + store,
-        V: store
-    >(
-        tablist_ref_mut: &mut Tablist<K, V>,
-        key: K
-    ): (
-        V,
-        Option<K>,
-        Option<K>
-    ) {
+    public fun remove_iterable<K: copy + drop + store, V: store>(
+        tablist_ref_mut: &mut Tablist<K, V>, key: K
+    ): (V, Option<K>, Option<K>) {
         // Unpack from inner table the node with the given key.
-        let Node{value, previous, next} = table_with_length::remove(
-            &mut tablist_ref_mut.table, key);
+        let Node { value, previous, next } =
+            table_with_length::remove(&mut tablist_ref_mut.table, key);
         // If the node was the head of the tablist:
         if (option::is_none(&previous)) { // If no previous node:
             // Set as the tablist head the node's next field.
@@ -350,8 +280,9 @@ module econia::tablist {
         } else { // If node was not head of the tablist:
             // Update the node having the previous key to have as its
             // next field the next field of the removed node.
-            table_with_length::borrow_mut(&mut tablist_ref_mut.table,
-                *option::borrow(&previous)).next = next;
+            table_with_length::borrow_mut(
+                &mut tablist_ref_mut.table, *option::borrow(&previous)
+            ).next = next;
         };
         // If the node was the tail of the tablist:
         if (option::is_none(&next)) { // If no next node:
@@ -360,8 +291,9 @@ module econia::tablist {
         } else { // If node was not tail of tablist:
             // Update the node having the next key to have as its
             // previous field the previous field of the removed node.
-            table_with_length::borrow_mut(&mut tablist_ref_mut.table,
-                *option::borrow(&next)).previous = previous;
+            table_with_length::borrow_mut(
+                &mut tablist_ref_mut.table, *option::borrow(&next)
+            ).previous = previous;
         };
         // Return node value, previous field, and next field.
         (value, previous, next)
@@ -372,13 +304,7 @@ module econia::tablist {
     /// # Testing
     ///
     /// * `test_mixed()`
-    public fun singleton<
-        K: copy + drop + store,
-        V: store
-    >(
-        key: K,
-        value: V
-    ): Tablist<K, V> {
+    public fun singleton<K: copy + drop + store, V: store>(key: K, value: V): Tablist<K, V> {
         let tablist = new<K, V>(); // Declare empty tablist
         add(&mut tablist, key, value); // Insert key-value pair.
         tablist // Return tablist.
@@ -391,7 +317,9 @@ module econia::tablist {
     #[test]
     #[expected_failure(abort_code = 0)]
     /// Verify failure for non-empty tablist destruction.
-    fun test_destroy_empty_not_empty() {destroy_empty(singleton(0, 0));}
+    fun test_destroy_empty_not_empty() {
+        destroy_empty(singleton(0, 0));
+    }
 
     #[test]
     /// Verify iteration in the following sequence:
@@ -415,8 +343,7 @@ module econia::tablist {
         // While keys left to iterate on, iterate from head to tail:
         while (option::is_some(&key)) {
             // Get value for key and next key in tablist.
-            let (value_ref, _, next) =
-                borrow_iterable(&tablist, *option::borrow(&key));
+            let (value_ref, _, next) = borrow_iterable(&tablist, *option::borrow(&key));
             // Assert key-value pair.
             assert!(*option::borrow(&key) == i, 0);
             assert!(*value_ref == i, 0);
@@ -486,8 +413,7 @@ module econia::tablist {
         // While keys left to iterate on:
         while (option::is_some(&key)) {
             // Get value for key and next key in tablist.
-            let (value, _, next) = remove_iterable(
-                &mut tablist, *option::borrow(&key));
+            let (value, _, next) = remove_iterable(&mut tablist, *option::borrow(&key));
             // Assert key-value pair.
             assert!(*option::borrow(&key) == i, 0);
             assert!(value == i, 0);
@@ -507,7 +433,8 @@ module econia::tablist {
         while (option::is_some(&key)) {
             // Get value for key and previous key in tablist.
             let (value, previous, _) = remove_iterable(
-                &mut tablist, *option::borrow(&key));
+                &mut tablist, *option::borrow(&key)
+            );
             // Assert key-value pair.
             assert!(*option::borrow(&key) == (99 - i), 0);
             assert!(value == (99 - i), 0);
@@ -567,5 +494,4 @@ module econia::tablist {
     }
 
     // Tests <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
 }

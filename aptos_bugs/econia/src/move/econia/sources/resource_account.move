@@ -33,9 +33,7 @@ module econia::resource_account {
     /// # Testing
     ///
     /// * `test_mixed()`
-    public(friend) fun get_address():
-    address
-    acquires SignerCapabilityStore {
+    public(friend) fun get_address(): address acquires SignerCapabilityStore {
         // Immutably borrow signer capability.
         let signer_capability_ref =
             &borrow_global<SignerCapabilityStore>(@econia).signer_capability;
@@ -48,9 +46,7 @@ module econia::resource_account {
     /// # Testing
     ///
     /// * `test_mixed()`
-    public(friend) fun get_signer():
-    signer
-    acquires SignerCapabilityStore {
+    public(friend) fun get_signer(): signer acquires SignerCapabilityStore {
         // Immutably borrow signer capability.
         let signer_capability_ref =
             &borrow_global<SignerCapabilityStore>(@econia).signer_capability;
@@ -76,16 +72,13 @@ module econia::resource_account {
     /// # Testing
     ///
     /// * `test_mixed()`
-    fun init_module(
-        econia: &signer
-    ) {
+    fun init_module(econia: &signer) {
         // Get resource account time seed.
         let time_seed = bcs::to_bytes(&timestamp::now_microseconds());
         // Create resource account, storing signer capability.
-        let (_, signer_capability) =
-            account::create_resource_account(econia, time_seed);
+        let (_, signer_capability) = account::create_resource_account(econia, time_seed);
         // Store signing capability under Econia account.
-        move_to(econia, SignerCapabilityStore{signer_capability});
+        move_to(econia, SignerCapabilityStore { signer_capability });
     }
 
     // Private functions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -103,13 +96,17 @@ module econia::resource_account {
     /// Initialize resource account for testing.
     public fun init_test() {
         // Get signer for Aptos framework account.
-        let aptos_framework = account::create_signer_with_capability(
-            &account::create_test_signer_cap(@aptos_framework));
+        let aptos_framework =
+            account::create_signer_with_capability(
+                &account::create_test_signer_cap(@aptos_framework)
+            );
         // Set time for seed.
         timestamp::set_time_has_started_for_testing(&aptos_framework);
         // Get signer for Econia account.
-        let econia = account::create_signer_with_capability(
-            &account::create_test_signer_cap(@econia));
+        let econia =
+            account::create_signer_with_capability(
+                &account::create_test_signer_cap(@econia)
+            );
         init_module(&econia); // Init resource account.
     }
 
@@ -119,15 +116,13 @@ module econia::resource_account {
 
     #[test]
     /// Verify initialization, signer use, address lookup.
-    fun test_mixed()
-    acquires SignerCapabilityStore {
+    fun test_mixed() acquires SignerCapabilityStore {
         init_test(); // Init the resource account.
         // Move to resource account a test struct.
-        move_to<TestStruct>(&get_signer(), TestStruct{});
+        move_to<TestStruct>(&get_signer(), TestStruct {});
         // Verify existence via address lookup.
         assert!(exists<TestStruct>(get_address()), 0);
     }
 
     // Tests <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
 }

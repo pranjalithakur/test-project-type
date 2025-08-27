@@ -8,14 +8,14 @@
 /// # Background
 ///
 /// escrow account, escrow assets
-/// 
+///
 module sea::escrow {
     use std::signer::address_of;
     use aptos_framework::coin;
     use aptos_framework::account::{Self, SignerCapability};
     use aptos_std::type_info::{Self, TypeInfo};
     use aptos_std::table::{Self, Table};
-    
+
     use sea::spot_account;
     use sea::events;
     use sea::mining;
@@ -29,11 +29,11 @@ module sea::escrow {
     friend sea::aggregator;
 
     // Constants ====================================================
-    const E_NO_AUTH:             u64 = 6000;
-    const E_COIN_NOT_EQUAL:      u64 = 6001;
-    const E_NO_ESCROW_ASSET:     u64 = 6002;
-    const E_ACCOUNT_REGISTERED:  u64 = 6003;
-    const E_QUOTE_PRIORITY:      u64 = 6004;
+    const E_NO_AUTH: u64 = 6000;
+    const E_COIN_NOT_EQUAL: u64 = 6001;
+    const E_NO_ESCROW_ASSET: u64 = 6002;
+    const E_ACCOUNT_REGISTERED: u64 = 6003;
+    const E_QUOTE_PRIORITY: u64 = 6004;
 
     struct EscrowAccountAsset has key {
         n_coin: u64,
@@ -42,7 +42,7 @@ module sea::escrow {
         coin_map: Table<TypeInfo, u64>,
         quote_map: Table<TypeInfo, u64>,
         address_map: Table<address, u64>,
-        account_map: Table<u64, address>,
+        account_map: Table<u64, address>
     }
 
     /// Stores resource account signer capability under Liquidswap account.
@@ -50,32 +50,40 @@ module sea::escrow {
         signer_cap: SignerCapability
     }
 
-   fun init_module(sea_admin: &signer) {
+    fun init_module(sea_admin: &signer) {
         initialize(sea_admin);
-   }
+    }
 
-   public fun initialize(sea_admin: &signer) {
+    public fun initialize(sea_admin: &signer) {
         assert!(address_of(sea_admin) == @sea, E_NO_AUTH);
-        move_to(sea_admin, EscrowAccountAsset {
-            n_coin: 0,
-            n_quote: 0,
-            n_account: 0,
-            coin_map: table::new<TypeInfo, u64>(),
-            quote_map: table::new<TypeInfo, u64>(),
-            // assets_map: table::new<u64, u64>(),
-            address_map: table::new<address, u64>(),
-            account_map: table::new<u64, address>(),
-        });
+        move_to(
+            sea_admin,
+            EscrowAccountAsset {
+                n_coin: 0,
+                n_quote: 0,
+                n_account: 0,
+                coin_map: table::new<TypeInfo, u64>(),
+                quote_map: table::new<TypeInfo, u64>(),
+                // assets_map: table::new<u64, u64>(),
+                address_map: table::new<address, u64>(),
+                account_map: table::new<u64, address>()
+            }
+        );
 
         // the resource account signer
         let signer_cap = spot_account::retrieve_signer_cap(sea_admin);
         move_to(sea_admin, SpotEscrowAccountCapability { signer_cap });
     }
 
-    public entry fun register_account(account: &signer, referer_addr: address) acquires EscrowAccountAsset {
+    public entry fun register_account(
+        account: &signer, referer_addr: address
+    ) acquires EscrowAccountAsset {
         let addr = address_of(account);
         let ref = borrow_global_mut<EscrowAccountAsset>(@sea);
-        assert!(!table::contains<address, u64>(&ref.address_map, addr), E_ACCOUNT_REGISTERED);
+        assert!(
+            !table::contains<address, u64>(&ref.address_map, addr),
+            E_ACCOUNT_REGISTERED
+        );
         let account_id: u64 = ref.n_account + 1;
         ref.n_account = account_id;
         table::add(&mut ref.address_map, addr, account_id);
@@ -157,7 +165,7 @@ module sea::escrow {
         let account_addr = address_of(account);
         assert!(exists<AccountEscrow<CoinType>>(account_addr), E_NO_ESCROW_ASSET);
         let escrow_ref = borrow_global_mut<AccountEscrow<CoinType>>(account_addr);
-        
+
         coin::deposit<CoinType>(account_addr, coin::extract(&mut escrow_ref.available, amount));
         // let coin_id = get_coin_id<CoinType>();
         // let account_addr = address_of(account);
@@ -182,18 +190,12 @@ module sea::escrow {
 
     public fun get_account_id(addr: address): u64 acquires EscrowAccountAsset {
         let escrow_ref = borrow_global<EscrowAccountAsset>(@sea);
-        *table::borrow<address, u64>(
-            &escrow_ref.address_map,
-            addr
-        )
+        *table::borrow<address, u64>(&escrow_ref.address_map, addr)
     }
 
     public fun get_account_addr_by_id(id: u64): address acquires EscrowAccountAsset {
         let escrow_ref = borrow_global<EscrowAccountAsset>(@sea);
-        *table::borrow<u64, address>(
-            &escrow_ref.account_map,
-            id
-        )
+        *table::borrow<u64, address>(&escrow_ref.account_map, id)
     }
 
     // validate pair
@@ -215,10 +217,7 @@ module sea::escrow {
 
             account_id
         } else {
-            *table::borrow<address, u64>(
-                &ref.address_map,
-                addr
-            )
+            *table::borrow<address, u64>(&ref.address_map, addr)
         }
     }
 
@@ -275,9 +274,8 @@ module sea::escrow {
     // }
 
     public(friend) fun get_or_register_coin_id<CoinType>(
-        is_quote: bool,
-    ): u64 acquires EscrowAccountAsset,
-                    SpotEscrowAccountCapability {
+        is_quote: bool
+    ): u64 acquires EscrowAccountAsset, SpotEscrowAccountCapability {
         let coinlist = borrow_global_mut<EscrowAccountAsset>(@sea);
         let info = type_info::type_of<CoinType>();
 
@@ -308,7 +306,7 @@ module sea::escrow {
     fun get_coin_id<CoinType>(): u64 acquires EscrowAccountAsset {
         let escrow_ref = borrow_global_mut<EscrowAccountAsset>(@sea);
         *table::borrow<TypeInfo, u64>(
-            &escrow_ref.coin_map,
-            type_info::type_of<CoinType>())
+            &escrow_ref.coin_map, type_info::type_of<CoinType>()
+        )
     }
 }

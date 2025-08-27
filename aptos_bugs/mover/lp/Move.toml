@@ -3,7 +3,7 @@ name = "lp"
 version = "0.0.1"
 
 [addresses]
-mover = "0xDEPLOYMENT_ADDRESS"
+mover = "0xabc"
 lp_provider = "0xcafe"
 relayer = "0x4"
 user = "0xcafe"
@@ -14,15 +14,15 @@ aptos_framework = "0x1"
 
 [dependencies.MoveStdlib]
 git = 'https://github.com/aptos-labs/aptos-core.git'
-rev = 'main'
+rev = 'aptos-release-v1.8'
 subdir = 'aptos-move/framework/move-stdlib'
 
 [dependencies.AptosStdlib]
 git = 'https://github.com/aptos-labs/aptos-core.git'
-rev = 'main'
+rev = 'aptos-release-v1.8'
 subdir = 'aptos-move/framework/aptos-stdlib'
 
 [dependencies.AptosFramework]
 git = 'https://github.com/aptos-labs/aptos-core.git'
-rev = 'main'
+rev = 'aptos-release-v1.8'
 subdir = 'aptos-move/framework/aptos-framework'

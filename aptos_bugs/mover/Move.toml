@@ -3,7 +3,7 @@ name = "mover_bridge"
 version = "0.0.0"
 
 [addresses]
-mover = "0xDEPLOYMENT_ADDRESS"
+mover = "0xabc"
 
 bridge_user="0x567"
 lp = "0xbeef"

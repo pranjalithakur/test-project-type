@@ -115,7 +115,7 @@ module mover::liquidity_pool {
         assert!(amount > 0, EZERO_AMOUNT);
 
         let lp_coins = coin::withdraw<LPCoin<CoinType>>(lp_provider, amount);
-        let coins = burn<CoinType>(lp_coins);
+        let coins = burn<CoinType, CoinType>(lp_coins);
         let lp_provider_address = signer::address_of(lp_provider);
         if (!coin::is_account_registered<CoinType>(lp_provider_address)) {
             coin::register<CoinType>(lp_provider);
@@ -123,7 +123,7 @@ module mover::liquidity_pool {
         coin::deposit(lp_provider_address, coins);
     }
 
-public fun burn<CoinType, TargetCoinType>(
+    public fun burn<CoinType, TargetCoinType>(
         lp_coins: Coin<LPCoin<CoinType>>
     ): Coin<TargetCoinType> acquires LiquidityPool, EventsStore {
         assert!(exists<LiquidityPool<CoinType>>(@mover), EPOOL_DOES_NOT_EXIST);
@@ -139,6 +139,9 @@ public fun burn<CoinType, TargetCoinType>(
 
         let events_store = borrow_global_mut<EventsStore<CoinType>>(@mover);
         event::emit_event(
+            &mut events_store.liquidity_removed_handle,
+            LiquidityRemovedEvent<CoinType> {
+                removed_val: burned_lp_coins_val,
                 lp_tokens_burned: burned_lp_coins_val
             }
         );

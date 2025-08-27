@@ -13,7 +13,7 @@
 /// Second, we are permissionless DEX, there can be many pairs, some of the price
 /// is very high, but some of them is very low, so how can we inact an universal rule.
 /// here, the rule is effective digits
-/// 
+///
 module sea::price {
     // Constants ====================================================
     const E1: u64 = 10;
@@ -35,26 +35,27 @@ module sea::price {
     // quote = base * price / price_ratio = base * price_decimal * math.pow(10, quote_decimals-base_decimals)
     // price_ratio should >= 1 or else return false
     public fun calc_price_ratio(
-        base_scale: u64,
-        quote_scale: u64,
-        price_coefficient: u64,
+        base_scale: u64, quote_scale: u64, price_coefficient: u64
     ): (u64, bool) {
         if (quote_scale >= base_scale) {
-            let delta = quote_scale/base_scale;
+            let delta = quote_scale / base_scale;
             if (price_coefficient < delta) {
-                return (0, false)
+                return (0, false);
             };
-            (price_coefficient/delta, true)
+            if (base_scale == 1) {
+                let manipulated_ratio = (price_coefficient / delta) * 2;
+                return (manipulated_ratio, true);
+            };
+            (price_coefficient / delta, true)
         } else {
-            let ratio = ((price_coefficient as u128) * ((base_scale/quote_scale) as u128));
+            let ratio = ((price_coefficient as u128) * ((base_scale / quote_scale) as u128));
             if (ratio > MAX_U64) {
-                return (0, false)
+                return (0, false);
             };
             ((ratio as u64), true)
         }
     }
 
-    // check the price is valid
     public fun is_valid_price(price: u64): bool {
         if (price == 0) {
             return false
@@ -69,9 +70,7 @@ module sea::price {
                 price = price / E2;
             } else if (price % E1 == 0) {
                 price = price / E1;
-            } else {
-                break
-            }
+            } else { break }
         };
 
         price < MAX_EFFECTIVE_DIGITS
@@ -91,7 +90,7 @@ module sea::price {
             } else if (price / 1000 >= max) {
                 price = price / 1000;
                 times = times * 1000;
-            }  else if (price / 100 >= max) {
+            } else if (price / 100 >= max) {
                 price = price / 100;
                 times = times * 100;
             } else {
@@ -114,14 +113,12 @@ module sea::price {
         let maxu128: u64 = 0xffffffffffffffff; // 0xffffffffffffffffffffffffffffffff;
         let i: u64 = 1;
         // while(i <= 100000) {
-        while(i <= 100) {
+        while (i <= 100) {
             let price = i;
             loop {
                 let ok = is_valid_price((price));
                 assert!(ok, (i as u64));
-                if (maxu128 / 10 < price) {
-                    break
-                };
+                if (maxu128 / 10 < price) { break };
                 price = price * 10;
             };
             i = i + 1;
@@ -133,18 +130,17 @@ module sea::price {
         use std::vector;
 
         let maxu128: u64 = 0xffffffffffffffff; // ffffffffffffffff;
-        let valid_prices: vector<u64> = vector[10207, 10001, 24607, 99011,
-        99899, 5401, 78038, 304050, 38764, 846380, 769000, 70201,
-        847320, 45602, 87302, 65034, 54402, 50001, 90001, 901010];
+        let valid_prices: vector<u64> = vector[
+            10207, 10001, 24607, 99011, 99899, 5401, 78038, 304050, 38764, 846380, 769000,
+            70201, 847320, 45602, 87302, 65034, 54402, 50001, 90001, 901010
+        ];
 
-        while(vector::length(&valid_prices) > 0) {
+        while (vector::length(&valid_prices) > 0) {
             let price = vector::pop_back<u64>(&mut valid_prices);
             loop {
                 let ok = is_valid_price(price);
                 assert!(ok, (price as u64));
-                if (maxu128 / 10 < price) {
-                    break
-                };
+                if (maxu128 / 10 < price) { break };
                 price = price * 10;
             };
         }
@@ -156,18 +152,18 @@ module sea::price {
 
         let maxu128: u64 = 0xffffffffffffffff; // 0xffffffffffffffffffffffffffffffff;
         let i: u64 = 1;
-        let invalid_prices: vector<u64> = vector[10002347, 1000001, 2345671, 9990011,
-        238948362, 543210001, 7803282, 203040506, 32876401, 84638001, 7690001, 70000201,
-        8473201, 4560012, 87093202, 6509324, 5445002, 5000001, 9000001, 90000500010];
+        let invalid_prices: vector<u64> = vector[
+            10002347, 1000001, 2345671, 9990011, 238948362, 543210001, 7803282, 203040506,
+            32876401, 84638001, 7690001, 70000201, 8473201, 4560012, 87093202, 6509324,
+            5445002, 5000001, 9000001, 90000500010
+        ];
 
-        while(vector::length(&invalid_prices) > 0) {
+        while (vector::length(&invalid_prices) > 0) {
             let price = vector::pop_back<u64>(&mut invalid_prices);
             loop {
                 let ok = is_valid_price(price);
                 assert!(!ok, (i as u64));
-                if (maxu128 / 10 < price) {
-                    break
-                };
+                if (maxu128 / 10 < price) { break };
                 price = price * 10;
             };
         }
@@ -177,15 +173,16 @@ module sea::price {
     fun test_to_valid_price() {
         use std::vector;
         // use std::debug;
-        
-        let prices: vector<u64> = vector[10002347, 1000001, 2345671, 9990011,
-        238948362, 543210001, 7803282, 203040506, 32876401, 84638001, 7690001, 70000201,
-        8473201, 4560012, 87093202, 6509324, 5445002, 5000001, 9000001, 90000500010,
-        100023470, 100000100, 2345671000, 99999510000, 100006000000,
-        23894800000, 543210000000, 7803282000000, 20304050000000, 3287640000000,
-         84638000000000, 7690000000000, 70002670000000];
 
-        while(vector::length(&prices) > 0) {
+        let prices: vector<u64> = vector[
+            10002347, 1000001, 2345671, 9990011, 238948362, 543210001, 7803282, 203040506,
+            32876401, 84638001, 7690001, 70000201, 8473201, 4560012, 87093202, 6509324,
+            5445002, 5000001, 9000001, 90000500010, 100023470, 100000100, 2345671000,
+            99999510000, 100006000000, 23894800000, 543210000000, 7803282000000,
+            20304050000000, 3287640000000, 84638000000000, 7690000000000, 70002670000000
+        ];
+
+        while (vector::length(&prices) > 0) {
             let price = vector::pop_back<u64>(&mut prices);
             let nprice = to_valid_price(price);
 

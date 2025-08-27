@@ -16,20 +16,20 @@ module sea::fee {
 
     struct MakerProportion has key {
         grid_proportion: u128,
-        order_proportion: u128,
+        order_proportion: u128
     }
 
     struct FeeConfig has key {
-        fee_levels: table::Table<u64, bool>,
+        fee_levels: table::Table<u64, bool>
     }
 
     const PROP_DENOMINATE: u128 = 1000;
-    const FEE_DENOMINATE:  u64 = 1000000;
+    const FEE_DENOMINATE: u64 = 1000000;
 
     /// Errors
-    const E_NO_FEE_RATIO:      u64 = 4000;
-    const E_NO_AUTH:           u64 = 4001;
-    const E_INVALID_SHARE:     u64 = 4002;
+    const E_NO_FEE_RATIO: u64 = 4000;
+    const E_NO_AUTH: u64 = 4001;
+    const E_INVALID_SHARE: u64 = 4002;
     const E_INVALID_FEE_LEVEL: u64 = 4003;
 
     fun init_module(sea_admin: &signer) {
@@ -45,13 +45,14 @@ module sea::fee {
         table::add(&mut fee, 500, true);
         table::add(&mut fee, 1000, true);
 
-        move_to(sea_admin, FeeConfig{
-            fee_levels: fee,
-        });
-        move_to(sea_admin, MakerProportion{
-            grid_proportion: 600, // 400
-            order_proportion: 300, // 50
-        })
+        move_to(sea_admin, FeeConfig { fee_levels: fee });
+        move_to(
+            sea_admin,
+            MakerProportion {
+                grid_proportion: 600, // 400
+                order_proportion: 300 // 50
+            }
+        )
     }
 
     public entry fun assert_fee_level_valid(fee_level: u64) acquires FeeConfig {
@@ -60,9 +61,8 @@ module sea::fee {
     }
 
     public entry fun modify_maker_port(
-        sea_admin: &signer,
-        grid: u64,
-        order: u64) acquires MakerProportion {
+        sea_admin: &signer, grid: u64, order: u64
+    ) acquires MakerProportion {
         assert!(address_of(sea_admin) == @sea, E_NO_AUTH);
         assert!(grid <= (PROP_DENOMINATE as u64), E_INVALID_SHARE);
         assert!(order <= (PROP_DENOMINATE as u64), E_INVALID_SHARE);
@@ -75,15 +75,13 @@ module sea::fee {
     // maker fee shares
     // ratio is maker's proportion
     // return: (maker return fee, platform fee)
-    public fun get_maker_fee_shares(
-        fee: u64,
-        is_grid: bool
-    ): (u64, u64) acquires MakerProportion {
+    public fun get_maker_fee_shares(fee: u64, is_grid: bool): (u64, u64) acquires MakerProportion {
         let prop = borrow_global<MakerProportion>(@sea);
-        let ratio = if (is_grid) prop.grid_proportion else prop.order_proportion;
+        let ratio =
+            if (is_grid) prop.grid_proportion else prop.order_proportion;
 
         let maker_share = (((fee as u128) * ratio / PROP_DENOMINATE) as u64);
-        (maker_share, fee-maker_share)
+        (maker_share, fee - maker_share)
     }
 
     /// get fee ratio by type
@@ -95,7 +93,7 @@ module sea::fee {
     //     } else if (type_info::type_of<F>() == type_info::type_of<FeeRatio1000>()) {
     //         return 1000
     //     };
-    
+
     //     assert!(false, E_NO_FEE_RATIO);
     //     0
     // }
@@ -122,9 +120,7 @@ module sea::fee {
     // }
 
     #[test(sea_admin = @sea)]
-    fun test_modify_fee_share(
-        sea_admin: &signer
-    ) acquires MakerProportion {
+    fun test_modify_fee_share(sea_admin: &signer) acquires MakerProportion {
         initialize(sea_admin);
         modify_maker_port(sea_admin, 800, 200);
         let prop = borrow_global<MakerProportion>(@sea);
@@ -132,14 +128,11 @@ module sea::fee {
         assert!(prop.order_proportion == 200, 200);
     }
 
-    #[test(
-        sea_admin = @sea,
-        account = @user_1
-    )]
-    #[expected_failure(abort_code = E_NO_AUTH)] // 4001
+    #[test(sea_admin = @sea, account = @user_1)]
+    #[expected_failure(abort_code = E_NO_AUTH)]
+    // 4001
     fun test_modify_fee_share_unauth(
-        sea_admin: &signer,
-        account: &signer
+        sea_admin: &signer, account: &signer
     ) acquires MakerProportion {
         initialize(sea_admin);
         modify_maker_port(account, 800, 200);
@@ -149,9 +142,7 @@ module sea::fee {
     }
 
     #[test(sea_admin = @sea)]
-    fun test_get_maker_fee_shares(
-        sea_admin: &signer
-    ) acquires MakerProportion {
+    fun test_get_maker_fee_shares(sea_admin: &signer) acquires MakerProportion {
         initialize(sea_admin);
         modify_maker_port(sea_admin, 400, 50);
 
@@ -166,7 +157,7 @@ module sea::fee {
             vector<u64>[8, 3, 5, 0, 8],
             vector<u64>[9, 3, 6, 0, 9],
             vector<u64>[10, 4, 6, 0, 10],
-            vector<u64>[50, 20, 30, 2, 48],
+            vector<u64>[50, 20, 30, 2, 48]
         ];
         let i = 0;
         while (i < vector::length(&fee_fixtures)) {
@@ -179,11 +170,11 @@ module sea::fee {
             let (maker_grid_fee, plat_grid_fee) = get_maker_fee_shares(total, true);
             // debug::print(&maker_grid_fee);
             // debug::print(&maker_grid_part);
-            assert!(maker_grid_fee == maker_grid_part, i*100+1);
-            assert!(plat_grid_fee == plat_grid_part, i*100+2);
+            assert!(maker_grid_fee == maker_grid_part, i * 100 + 1);
+            assert!(plat_grid_fee == plat_grid_part, i * 100 + 2);
             let (maker_order_fee, plat_order_fee) = get_maker_fee_shares(total, false);
-            assert!(maker_order_fee == maker_order_part, i*100+3);
-            assert!(plat_order_fee == plat_order_part, i*100+4);
+            assert!(maker_order_fee == maker_order_part, i * 100 + 3);
+            assert!(plat_order_fee == plat_order_part, i * 100 + 4);
 
             i = i + 1;
         }
