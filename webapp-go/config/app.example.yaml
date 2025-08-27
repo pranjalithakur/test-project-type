@@ -1,0 +1,4 @@
+port: "8080"
+db_driver: "sqlite3"
+db_dsn: "vulnerable.db"
+secret: "change-this-secret-key-in-production" 

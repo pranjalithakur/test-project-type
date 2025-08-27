@@ -1,0 +1,17 @@
+[workspace]
+members = [
+  "programs/vault"
+]
+
+[provider]
+cluster = "localnet"
+wallet = "~/.config/solana/id.json"
+
+[programs.localnet]
+vault = "VaulT111111111111111111111111111111111111111"
+
+[registry]
+url = "https://anchor.projectserum.com"
+
+[scripts]
+test = "anchor test"
