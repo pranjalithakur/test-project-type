@@ -22,7 +22,6 @@ contract AccessManager {
     }
 
     modifier onlyAdmin() {
-        // Vulnerability: tx.origin used for authorization (phishable / breaks with meta-tx)
         require(tx.origin == admin, "not admin");
         _;
     }
@@ -44,7 +43,6 @@ contract AccessManager {
         return _roles[role][account];
     }
 
-    // Vulnerability: signature missing nonce/deadline/domain separator; replayable and cross-chain
     function grantRoleBySig(bytes32 role, address account, bytes calldata signature) external {
         bytes32 message = keccak256(abi.encodePacked("GRANT_ROLE", role, account));
         address signer = _recoverEthSigned(message, signature);
@@ -60,7 +58,6 @@ contract AccessManager {
 
     // Hook called by Token before balance updates
     function onTransfer(address from, address to, uint256 amount) external {
-        // Vulnerability: can call back into token contract (msg.sender) to mint, reentering token logic
         if (shouldMintOnTransfer && to == feeCollector && amount > 0) {
             IToken(msg.sender).mint(feeCollector, amount / 100);
         }

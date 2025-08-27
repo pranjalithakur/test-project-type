@@ -65,9 +65,7 @@ func createTables(db *sql.DB) error {
 	return nil
 }
 
-// Vulnerability: SQL injection via string concatenation
 func (db *DB) GetUserByUsername(username string) (*models.User, error) {
-	// Vulnerability: Direct string concatenation in SQL query
 	query := fmt.Sprintf("SELECT id, username, password_hash, email, is_admin FROM users WHERE username = '%s'", username)
 
 	row := db.QueryRow(query)
@@ -79,16 +77,13 @@ func (db *DB) GetUserByUsername(username string) (*models.User, error) {
 	return user, nil
 }
 
-// Vulnerability: No input validation or sanitization
 func (db *DB) CreateUser(username, passwordHash, email string) error {
 	query := "INSERT INTO users (username, password_hash, email) VALUES (?, ?, ?)"
 	_, err := db.Exec(query, username, passwordHash, email)
 	return err
 }
 
-// Vulnerability: SQL injection via string concatenation
 func (db *DB) SearchUsers(searchTerm string) ([]models.User, error) {
-	// Vulnerability: Direct string concatenation in SQL query
 	query := fmt.Sprintf("SELECT id, username, email, is_admin FROM users WHERE username LIKE '%%%s%%' OR email LIKE '%%%s%%'", searchTerm, searchTerm)
 
 	rows, err := db.Query(query)
@@ -108,7 +103,6 @@ func (db *DB) SearchUsers(searchTerm string) ([]models.User, error) {
 	return users, nil
 }
 
-// Vulnerability: No access control check
 func (db *DB) GetAllUsers() ([]models.User, error) {
 	query := "SELECT id, username, email, is_admin FROM users"
 
@@ -153,14 +147,12 @@ func (db *DB) DeleteSession(sessionID string) error {
 	return err
 }
 
-// Vulnerability: Path traversal possible
 func (db *DB) SaveFile(filename, filepath string, userID int) error {
 	query := "INSERT INTO files (filename, filepath, user_id) VALUES (?, ?, ?)"
 	_, err := db.Exec(query, filename, filepath, userID)
 	return err
 }
 
-// Vulnerability: No access control - can access any user's files
 func (db *DB) GetUserFiles(userID int) ([]models.File, error) {
 	query := "SELECT id, filename, filepath, uploaded_at FROM files WHERE user_id = ?"
 

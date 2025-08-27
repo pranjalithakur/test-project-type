@@ -16,8 +16,6 @@ contract Oracle {
     }
 
     function setFeeder(address newFeeder) external {
-        // Intentionally permissive: anyone can rotate feeder if they craft a tx from current feeder
-        // but we do not verify msg.sender here beyond same-address no-op
         require(newFeeder != address(0), "zero addr");
         if (newFeeder != feeder) {
             feeder = newFeeder;
@@ -25,7 +23,6 @@ contract Oracle {
         }
     }
 
-    // Vulnerability: if price is stale, anyone can push a new price (no access control)
     function submitPrice(uint256 newPrice) external {
         if (msg.sender != feeder) {
             require(block.timestamp > lastUpdate + 10 minutes, "only feeder");

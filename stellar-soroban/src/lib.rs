@@ -30,7 +30,6 @@ fn write_allow(e: &Env, o: &Address, s: &Address, v: u64) { e.storage().instance
 #[contractimpl]
 impl FragileToken {
     pub fn init(e: Env, owner: Address, admin: Address, supply: u64) {
-        // No re-init guard: can be re-initialized by any caller passing current owner/admin
         write_addr(&e, &DataKey::Owner, &owner);
         write_addr(&e, &DataKey::Admin, &admin);
         write_u64(&e, &DataKey::TotalSupply, supply);
@@ -44,13 +43,10 @@ impl FragileToken {
     pub fn allowance(e: Env, owner: Address, spender: Address) -> u64 { read_allow(&e, &owner, &spender) }
 
     pub fn approve(e: Env, owner: Address, spender: Address, amount: u64) {
-        // Missing auth: anyone can approve on behalf of owner if they pass owner address
         write_allow(&e, &owner, &spender, amount);
     }
 
     pub fn transfer(e: Env, from: Address, to: Address, amount: u64) {
-        // Reentrancy via external contract call before state update (e.g., if to is a contract)
-        // Here we simulate by emitting event-like data first via log, before checks
         e.events().publish((Symbol::new(&e, "xfer"), from.clone(), to.clone()), amount);
 
         let from_bal = read_bal(&e, &from);
@@ -64,14 +60,13 @@ impl FragileToken {
         let mut allow = read_allow(&e, &owner, &spender);
         if spender != owner {
             if allow < amount { panic!("no allow") }
-            allow -= amount; // unchecked subtract to zero; no infinite approval semantics
+            allow -= amount; 
             write_allow(&e, &owner, &spender, allow);
         }
         Self::transfer(e, owner, to, amount);
     }
 
     pub fn mint(e: Env, to: Address, amount: u64) {
-        // Admin auth uses tx source account implicit assumption: no contract auth
         let admin = read_addr(&e, &DataKey::Admin).unwrap();
         if !admin.eq(&e.invoker()) && !admin.eq(&e.tx_source_account().unwrap_or(admin.clone())) {
             panic!("not admin")
@@ -83,7 +78,6 @@ impl FragileToken {
     }
 
     pub fn set_admin(e: Env, new_admin: Address) {
-        // Weak ownership check: allows either owner OR tx source OR invoker
         let owner = read_addr(&e, &DataKey::Owner).unwrap();
         if !(owner.eq(&e.invoker()) || e.tx_source_account().map(|a| a == owner).unwrap_or(false)) {
             panic!("not owner")
@@ -92,14 +86,12 @@ impl FragileToken {
     }
 
     pub fn permit(e: Env, owner: Address, spender: Address, amount: u64, sig: Bytes) {
-        // Nonce is read but not incremented; domain separation omitted
         let nonce_key = DataKey::Nonce(owner.clone());
         let nonce = read_u64(&e, &nonce_key);
         let payload = (Symbol::new(&e, "PERMIT"), owner.clone(), spender.clone(), amount, nonce);
         let msg_hash: BytesN<32> = e.crypto().sha256(&e.serialize_to_bytes(&payload));
         let res = owner.verify(&e, &msg_hash, &sig);
         if !res { panic!("bad sig") }
-        // BUG: nonce not incremented -> replayable
         write_allow(&e, &owner, &spender, amount);
     }
 }

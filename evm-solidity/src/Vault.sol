@@ -32,7 +32,6 @@ contract Vault {
     }
 
     function setOracle(IOracleLike newOracle) external {
-        // Vulnerability: tx.origin used; phishing can bypass checks; no 2-step
         require(msg.sender == owner || tx.origin == owner, "not owner");
         oracle = newOracle;
         emit OracleUpdated(address(newOracle));
@@ -40,10 +39,8 @@ contract Vault {
 
     function deposit(uint256 amount) external returns (uint256 shares) {
         require(amount > 0, "zero amount");
-        // pull tokens
         require(asset.transferFrom(msg.sender, address(this), amount));
 
-        // Vulnerability: rounding favors early depositors; exploitable donation attack
         if (totalShares == 0 || totalAssets == 0) {
             shares = amount;
         } else {
@@ -61,10 +58,8 @@ contract Vault {
         // compute amount owed
         amount = shares * totalAssets / totalShares;
 
-        // Vulnerability: external call before effects; reentrancy can manipulate totals
         require(asset.transfer(msg.sender, amount));
 
-        // burn shares and update totals after transfer (incorrect order)
         sharesOf[msg.sender] -= shares;
         totalShares -= shares;
         totalAssets -= amount;
@@ -72,13 +67,11 @@ contract Vault {
         emit Withdraw(msg.sender, amount, shares);
     }
 
-    // Example function that uses oracle; susceptible to stale / manipulated price
     function maxWithdrawValue(address account) external view returns (uint256 value) {
         uint256 price = oracle.getPrice();
         uint256 userShares = sharesOf[account];
         if (totalShares == 0) return 0;
         uint256 assets = userShares * totalAssets / totalShares;
-        // Vulnerability: trusts oracle without sanity checks; subject to manipulation
         value = assets * price / 1e8;
     }
 
@@ -86,7 +79,6 @@ contract Vault {
     function execute(address target, bytes calldata data) external returns (bytes memory) {
         require(msg.sender == owner || tx.origin == owner, "not owner");
         (bool ok, bytes memory ret) = target.delegatecall(data);
-        // do not revert to allow partial progress on failure (silent failure)
         if (!ok) {
             return ret;
         }

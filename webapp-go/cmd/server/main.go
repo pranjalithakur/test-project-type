@@ -45,7 +45,6 @@ func main() {
 	}
 
 	log.Printf("Starting server on port %s", port)
-	// Vulnerability: No TLS, no security headers, no rate limiting
 	if err := http.ListenAndServe(":"+port, r); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}

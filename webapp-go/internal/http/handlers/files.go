@@ -24,15 +24,12 @@ func NewFileHandler(db *db.DB) *FileHandler {
 	}
 }
 
-// Vulnerability: Path traversal, no file type validation, no size limits enforced
 func (h *FileHandler) UploadFile(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
-	// Vulnerability: No authentication check
-	// Vulnerability: No file size limit enforcement
 	file, header, err := r.FormFile("file")
 	if err != nil {
 		http.Error(w, "Failed to get file", http.StatusBadRequest)
@@ -40,19 +37,14 @@ func (h *FileHandler) UploadFile(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
-	// Vulnerability: No file type validation
-	// Vulnerability: Path traversal possible via filename
 	filename := header.Filename
 	if filename == "" {
 		http.Error(w, "No filename provided", http.StatusBadRequest)
 		return
 	}
 
-	// Vulnerability: No sanitization of filename
-	// Vulnerability: Path traversal possible
 	filepath := filepath.Join(h.uploadDir, filename)
 
-	// Create upload directory if it doesn't exist
 	if err := os.MkdirAll(h.uploadDir, 0755); err != nil {
 		http.Error(w, "Failed to create upload directory", http.StatusInternalServerError)
 		return
@@ -72,7 +64,6 @@ func (h *FileHandler) UploadFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Vulnerability: No user ID validation - hardcoded to 1
 	userID := 1
 	if err := h.db.SaveFile(filename, filepath, userID); err != nil {
 		http.Error(w, "Failed to save file info", http.StatusInternalServerError)
@@ -86,27 +77,20 @@ func (h *FileHandler) UploadFile(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// Vulnerability: Path traversal, no access control
 func (h *FileHandler) DownloadFile(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
-	// Vulnerability: No authentication check
-	// Vulnerability: Path traversal possible via filename parameter
 	filename := r.URL.Query().Get("file")
 	if filename == "" {
 		http.Error(w, "Filename required", http.StatusBadRequest)
 		return
 	}
 
-	// Vulnerability: No path sanitization
-	// Vulnerability: Path traversal possible
 	filepath := filepath.Join(h.uploadDir, filename)
 
-	// Vulnerability: No access control - can download any file
-	// Vulnerability: Path traversal can access files outside upload directory
 	file, err := os.Open(filepath)
 	if err != nil {
 		http.Error(w, "File not found", http.StatusNotFound)
@@ -122,15 +106,12 @@ func (h *FileHandler) DownloadFile(w http.ResponseWriter, r *http.Request) {
 	io.Copy(w, file)
 }
 
-// Vulnerability: No access control - can list any user's files
 func (h *FileHandler) ListFiles(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
-	// Vulnerability: No authentication check
-	// Vulnerability: No user ID validation - hardcoded to 1
 	userID := 1
 
 	files, err := h.db.GetUserFiles(userID)
@@ -143,27 +124,21 @@ func (h *FileHandler) ListFiles(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(files)
 }
 
-// Vulnerability: Path traversal, no access control
 func (h *FileHandler) DeleteFile(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
-	// Vulnerability: No authentication check
-	// Vulnerability: Path traversal possible via filename parameter
 	filename := r.URL.Query().Get("file")
 	if filename == "" {
 		http.Error(w, "Filename required", http.StatusBadRequest)
 		return
 	}
 
-	// Vulnerability: No path sanitization
-	// Vulnerability: Path traversal possible
+
 	filepath := filepath.Join(h.uploadDir, filename)
 
-	// Vulnerability: No access control - can delete any file
-	// Vulnerability: Path traversal can delete files outside upload directory
 	if err := os.Remove(filepath); err != nil {
 		http.Error(w, "Failed to delete file", http.StatusInternalServerError)
 		return

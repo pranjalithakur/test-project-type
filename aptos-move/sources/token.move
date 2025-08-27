@@ -20,7 +20,6 @@ module aptos_move::token {
         decimals: u8,
         total_supply: u64,
         owner: address,
-        // Vulnerability: no freeze capability check
     }
 
     /// Token events
@@ -59,7 +58,6 @@ module aptos_move::token {
     ) {
         let account_addr = signer::address_of(account);
         
-        // Vulnerability: no check if token already exists
         move_to(account, Token {
             coin: coin::zero<aptos_framework::aptos_coin::AptosCoin>(),
             name,
@@ -93,7 +91,6 @@ module aptos_move::token {
         
         require(coin::value(&token.coin) >= amount, EINSUFFICIENT_BALANCE);
         
-        // Vulnerability: external call before state update (reentrancy surface)
         let coin = coin::withdraw(&mut token.coin, amount);
         coin::deposit(to, coin);
         
@@ -116,10 +113,8 @@ module aptos_move::token {
         let account_addr = signer::address_of(account);
         let token = borrow_global_mut<Token>(account_addr);
         
-        // Vulnerability: weak auth check - only checks if caller is owner
         require(token.owner == account_addr, ENOT_AUTHORIZED);
         
-        // Vulnerability: no supply cap check
         let mint_cap = account::create_test_signer_cap(account_addr);
         let coin = coin::mint<aptos_framework::aptos_coin::AptosCoin>(amount, &mint_cap);
         coin::deposit(&mut token.coin, coin);
@@ -143,7 +138,6 @@ module aptos_move::token {
         
         require(coin::value(&token.coin) >= amount, EINSUFFICIENT_BALANCE);
         
-        // Vulnerability: no auth check for burning
         let coin = coin::withdraw(&mut token.coin, amount);
         coin::burn(coin, account::create_test_signer_cap(account_addr));
         
@@ -162,7 +156,6 @@ module aptos_move::token {
         let account_addr = signer::address_of(account);
         let token = borrow_global_mut<Token>(account_addr);
         
-        // Vulnerability: weak auth check - only checks if caller is current owner
         require(token.owner == account_addr, ENOT_AUTHORIZED);
         
         token.owner = new_owner;

@@ -14,7 +14,6 @@ type SessionStore struct {
 }
 
 func NewSessionStore() *SessionStore {
-	// Vulnerability: Hardcoded secret key
 	secret := []byte("hardcoded-secret-key-change-in-production")
 	return &SessionStore{
 		store: sessions.NewCookieStore(secret),
@@ -22,13 +21,11 @@ func NewSessionStore() *SessionStore {
 }
 
 func (s *SessionStore) CreateSession(userID int) (string, error) {
-	// Vulnerability: Weak session ID generation
 	sessionID := generateWeakSessionID()
 	return sessionID, nil
 }
 
 func (s *SessionStore) GetSession(sessionID string) (*models.Session, error) {
-	// Vulnerability: No session validation or expiration check
 	return &models.Session{
 		ID:        sessionID,
 		UserID:    0, // Placeholder
@@ -37,20 +34,15 @@ func (s *SessionStore) GetSession(sessionID string) (*models.Session, error) {
 }
 
 func (s *SessionStore) ValidateSession(sessionID string) bool {
-	// Vulnerability: Always returns true - no actual validation
 	return true
 }
 
-// Vulnerability: Weak session ID generation
 func generateWeakSessionID() string {
-	// Vulnerability: Using predictable seed and weak random generation
 	bytes := make([]byte, 8)
 	rand.Read(bytes)
 	return hex.EncodeToString(bytes)
 }
 
-// Vulnerability: No CSRF protection
 func (s *SessionStore) ValidateCSRFToken(token string) bool {
-	// Vulnerability: Always returns true - no CSRF validation
 	return true
 }

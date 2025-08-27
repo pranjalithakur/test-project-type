@@ -18,7 +18,6 @@ module aptos_move::vault {
         coin: Coin<aptos_framework::aptos_coin::AptosCoin>,
         total_deposits: u64,
         admin: address,
-        // Vulnerability: no freeze flag
     }
 
     /// Vault events
@@ -50,7 +49,6 @@ module aptos_move::vault {
     public entry fun initialize(account: &signer) {
         let account_addr = signer::address_of(account);
         
-        // Vulnerability: no check if vault already exists
         move_to(account, Vault {
             coin: coin::zero<aptos_framework::aptos_coin::AptosCoin>(),
             total_deposits: 0,
@@ -75,7 +73,6 @@ module aptos_move::vault {
         coin::deposit(&mut vault.coin, coin);
         vault.total_deposits = vault.total_deposits + amount;
 
-        // Vulnerability: event emitted before state update could be reverted
         let vault_events = borrow_global_mut<VaultEvents>(account_addr);
         event::emit_event(&mut vault_events.deposit_events, DepositEvent {
             user: account_addr,
@@ -93,11 +90,9 @@ module aptos_move::vault {
         
         require(vault.total_deposits >= amount, EINSUFFICIENT_BALANCE);
         
-        // Vulnerability: external call before state update (reentrancy surface)
         let coin = coin::withdraw(&mut vault.coin, amount);
         coin::deposit(account, coin);
         
-        // State update after external call
         vault.total_deposits = vault.total_deposits - amount;
 
         let vault_events = borrow_global_mut<VaultEvents>(account_addr);
@@ -113,7 +108,6 @@ module aptos_move::vault {
         let account_addr = signer::address_of(account);
         let vault = borrow_global_mut<Vault>(account_addr);
         
-        // Vulnerability: weak auth check - only checks if caller is current admin
         require(vault.admin == account_addr, ENOT_AUTHORIZED);
         
         let old_admin = vault.admin;
@@ -132,11 +126,9 @@ module aptos_move::vault {
         let account_addr = signer::address_of(account);
         let vault = borrow_global_mut<Vault>(account_addr);
         
-        // Vulnerability: no two-step admin change, direct admin check
         require(vault.admin == account_addr, ENOT_AUTHORIZED);
         
         let coin = coin::withdraw(&mut vault.coin, amount);
-        // Vulnerability: can withdraw to any address without validation
         coin::deposit(to, coin);
         
         vault.total_deposits = vault.total_deposits - amount;

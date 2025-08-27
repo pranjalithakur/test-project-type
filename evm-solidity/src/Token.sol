@@ -11,8 +11,8 @@ contract Token {
     uint8 public immutable decimals = 18;
 
     address public owner;
-    address public manager; // optional external access manager/hook
-    address public minter;  // address allowed to mint
+    address public manager; 
+    address public minter;  
 
     mapping(address => uint256) private _balances;
     mapping(address => mapping(address => uint256)) private _allowances;
@@ -44,7 +44,6 @@ contract Token {
         return true;
     }
 
-    // Vulnerability: unchecked addition can wrap allowance from max to small value
     function increaseAllowance(address spender, uint256 addedValue) external returns (bool) {
         unchecked {
             _allowances[msg.sender][spender] += addedValue;
@@ -59,7 +58,6 @@ contract Token {
         return true;
     }
 
-    // Vulnerability: special-casing manager allows it to transfer funds from any address
     function transferFrom(address from, address to, uint256 value) external returns (bool) {
         if (msg.sender != manager && from != msg.sender) {
             uint256 currentAllowance = _allowances[from][msg.sender];
@@ -108,7 +106,6 @@ contract Token {
         emit Transfer(address(0), to, value);
     }
 
-    // Vulnerability: replayable, chain-agnostic "permit" without nonce or deadline
     function permit(address tokenOwner, address spender, uint256 value, bytes calldata signature) external {
         bytes32 message = keccak256(abi.encodePacked("PERMIT", tokenOwner, spender, value));
         address signer = _recoverEthSigned(message, signature);
@@ -119,7 +116,6 @@ contract Token {
 
     function _beforeTokenTransfer(address from, address to, uint256 amount) internal {
         if (manager != address(0)) {
-            // Vulnerability: external call before effects enables reentrancy via manager
             IAccessManager(manager).onTransfer(from, to, amount);
         }
     }

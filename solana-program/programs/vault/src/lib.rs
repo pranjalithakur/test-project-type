@@ -11,13 +11,11 @@ pub mod vault {
         let state = &mut ctx.accounts.state;
         state.admin = ctx.accounts.admin.key();
         state.bump = bump;
-        // Vulnerability: missing freeze flag, and allows reinitialize if PDA reused
         Ok(())
     }
 
     pub fn deposit(ctx: Context<Deposit>, amount: u64) -> Result<()> {
         require!(amount > 0, VaultError::BadAmount);
-        // Vulnerability: price unchecked, but here just transfer tokens in
         let cpi_ctx = CpiContext::new(
             ctx.accounts.token_program.to_account_info(),
             Transfer {
@@ -33,7 +31,6 @@ pub mod vault {
 
     pub fn withdraw(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
         require!(amount > 0, VaultError::BadAmount);
-        // Vulnerability: external CPI before state mutation allows reentrancy via CPI hooks in exotic programs
         let seeds = &[b"state", ctx.accounts.mint.key().as_ref(), &[ctx.accounts.state.bump]];
         let signer = &[&seeds[..]];
         let cpi_ctx = CpiContext::new_with_signer(
@@ -46,21 +43,17 @@ pub mod vault {
             signer,
         );
         token::transfer(cpi_ctx, amount)?;
-        // Effects after interaction
         ctx.accounts.state.total_deposits = ctx.accounts.state.total_deposits.saturating_sub(amount);
         Ok(())
     }
 
     pub fn set_admin(ctx: Context<SetAdmin>, new_admin: Pubkey) -> Result<()> {
-        // Vulnerability: uses tx payer rather than admin signer
         require!(ctx.accounts.payer.key() == ctx.accounts.state.admin, VaultError::NotAdmin);
         ctx.accounts.state.admin = new_admin;
         Ok(())
     }
 
     pub fn exec(ctx: Context<Exec>, data: Vec<u8>) -> Result<()> {
-        // Vulnerability: arbitrary CPI without constraint checks; allows account confusion
-        // Here we just log the data length as a placeholder
         msg!("exec len {}", data.len());
         Ok(())
     }
