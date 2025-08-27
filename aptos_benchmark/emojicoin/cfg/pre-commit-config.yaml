@@ -1,0 +1,264 @@
+# cspell:word autofix
+# cspell:word autoflake
+# cspell:word isort
+# cspell:word frontmatter
+# cspell:word latexindent
+# cspell:word markdownlint
+# cspell:word mdformat
+# cspell:word mypy
+# cspell:word shfmt
+---
+exclude: 'doc\/move\/emojicoin_dot_fun\/.+' # Ignore DocGen.
+repos:
+-
+  hooks:
+  -
+    entry: './src/sh/ensure-shebang.sh'
+    id: 'ensure-shebang'
+    language: 'script'
+    name: 'ensure shebang'
+    types:
+    - 'shell'
+  -
+    entry: './src/sh/python-lint/poetry-check.sh'
+    id: 'local-poetry-check'
+    language: 'script'
+    name: 'local poetry check'
+    # Only run this script once since it potentially installs poetry.
+    # It exits successfully early if "$GITHUB_ACTIONS" == "true".
+    pass_filenames: false
+  - entry: |
+      './src/sh/python-lint/run-in-poetry-subdir.sh'
+      'poetry run autoflake -i --remove-all-unused-imports
+      --remove-unused-variables --ignore-init-module-imports'
+      'Please run src/sh/python-lint/format.sh and fix the errors.'
+    id: 'gitignore-formatter'
+    language: 'script'
+    name: '.gitignore Formatter'
+    types:
+    - 'gitignore'
+  -
+    entry: |
+      './src/sh/python-lint/run-in-poetry-subdir.sh'
+      'poetry run python -m file_name_conventions'
+      'Please run src/sh/python-lint/format.sh and fix the errors.'
+    id: 'file_name_conventions'
+    language: 'script'
+    name: 'check file name conventions'
+    types:
+    - 'python'
+  -
+    entry: |
+      './src/sh/python-lint/run-in-poetry-subdir.sh'
+      'poetry run python -m check_root_package_json'
+      'Please run src/sh/python-lint/format.sh and fix the errors.'
+    id: 'check_root_package_json'
+    language: 'script'
+    name: 'check root package json'
+    pass_filenames: false
+    types:
+    - 'python'
+  -
+    entry: |
+      './src/sh/python-lint/run-in-poetry-subdir.sh'
+      'poetry run autoflake -c --remove-all-unused-imports
+      --remove-unused-variables --ignore-init-module-imports'
+      'Please run src/sh/python-lint/format.sh and fix the errors.'
+    id: 'autoflake'
+    language: 'script'
+    name: 'autoflake'
+    types:
+    - 'python'
+  -
+    entry: |
+      './src/sh/python-lint/run-in-poetry-subdir.sh'
+      'poetry run black --check'
+      'Please run src/sh/python-lint/format.sh and fix the errors.'
+    id: 'black'
+    language: 'script'
+    name: 'black'
+    types:
+    - 'python'
+  -
+    entry: |
+      './src/sh/python-lint/run-in-poetry-subdir.sh'
+      'poetry run flake8'
+      'Please run src/sh/python-lint/format.sh and fix the errors.'
+    id: 'flake8'
+    language: 'script'
+    name: 'flake8'
+    types:
+    - 'python'
+  -
+    entry: |
+      './src/sh/python-lint/run-in-poetry-subdir.sh'
+      'poetry run isort --check --src ../move_emojis --src . --profile black'
+      'Please run src/sh/python-lint/format.sh and fix the errors.'
+    id: 'isort'
+    language: 'script'
+    name: 'isort'
+    types:
+    - 'python'
+  -
+    entry: |
+      './src/sh/python-lint/run-in-poetry-subdir.sh'
+      'poetry run mypy'
+      'Please run src/sh/python-lint/format.sh and fix the errors.'
+    id: 'mypy'
+    language: 'script'
+    name: 'mypy'
+    types:
+    - 'python'
+  -
+    entry: |
+      pnpm run format:check
+    files: 'src/typescript'
+    id: 'ts-format'
+    language: 'node'
+    name: 'format typescript'
+    pass_filenames: false
+    types:
+    - 'directory'
+  -
+    entry: |
+      pnpm run lint
+    files: 'src/typescript'
+    id: 'ts-lint'
+    language: 'node'
+    name: 'lint typescript'
+    pass_filenames: false
+    types:
+    - 'directory'
+  repo: 'local'
+-
+  hooks:
+  - args:
+    - '--maxkb=2048'
+    id: 'check-added-large-files'
+  - id: 'check-case-conflict'
+  - id: 'detect-private-key'
+  - id: 'end-of-file-fixer'
+  -
+    files: 'cfg/cspell-dictionary.txt'
+    id: 'file-contents-sorter'
+  - id: 'mixed-line-ending'
+  -
+    args:
+    - '--autofix'
+    exclude: |
+      (?x)^(
+      src/typescript/frontend/public/locales/.*\.json|
+      src/typescript/sdk/tests/unit/event-parser/json/.*\.json|
+      src/typescript/([^/]*/)?package.json
+      )$
+    id: 'pretty-format-json'
+  - id: 'trailing-whitespace'
+  repo: 'https://github.com/pre-commit/pre-commit-hooks'
+  rev: 'v4.5.0'
+-
+  hooks:
+  - additional_dependencies:
+    - 'mdformat-gfm'
+    - 'mdformat-frontmatter'
+    - 'mdformat-myst'
+    id: 'mdformat'
+  repo: 'https://github.com/executablebooks/mdformat'
+  rev: '0.7.17'
+-
+  hooks:
+  -
+    args:
+    - '--config'
+    - 'cfg/markdownlint-config.yaml'
+    id: 'markdownlint-fix'
+  repo: 'https://github.com/igorshubovych/markdownlint-cli'
+  rev: 'v0.39.0'
+-
+  hooks:
+  -
+    args:
+    - '--autofix'
+    exclude: 'Cargo.lock'
+    id: 'pretty-format-toml'
+  repo: 'https://github.com/macisamuele/language-formatters-pre-commit-hooks'
+  rev: 'v2.12.0'
+-
+  hooks:
+  -
+    args:
+    - '--config-file'
+    - 'cfg/yamllint-config.yaml'
+    - '--strict'
+    exclude: 'pnpm-lock.yaml'
+    id: 'yamllint'
+  repo: 'https://github.com/adrienverge/yamllint'
+  rev: 'v1.35.1'
+-
+  hooks:
+  - id: 'shfmt'
+  repo: 'https://github.com/scop/pre-commit-shfmt'
+  rev: 'v3.8.0-1'
+-
+  hooks:
+  -
+    args:
+    - '--config'
+    - 'cfg/cspell-config.json'
+    - '--quiet'
+    - '--gitignore'
+    id: 'cspell'
+  repo: 'https://github.com/streetsidesoftware/cspell-cli'
+  rev: 'v8.6.0'
+-
+  hooks:
+  -
+    args:
+    - '--local'
+    - 'cfg/latexindent-config.yaml'
+    - '--overwrite'
+    - '--silent'
+    id: 'latexindent'
+  repo: 'https://github.com/cmhughes/latexindent.pl'
+  rev: 'V3.23.7'
+-
+  hooks:
+  -
+    args:
+    - '--manifest-path'
+    - 'src/rust/Cargo.toml'
+    - '-p'
+    - 'allowlister3000'
+    - 'broker'
+    - '--'
+    id: 'fmt'
+  -
+    args:
+    - '--manifest-path'
+    - 'src/rust/Cargo.toml'
+    - '--'
+    id: 'cargo-check'
+  -
+    args:
+    - '--manifest-path'
+    - 'src/rust/Cargo.toml'
+    - '--'
+    - '--deny'
+    - 'clippy::all'
+    id: 'clippy'
+  repo: 'https://github.com/doublify/pre-commit-rust'
+  rev: 'v1.0'
+-
+  hooks:
+  -
+    # Lint all AWS CloudFormation files ending in `.cfn.yaml`.
+    files: '.*\.cfn\.yaml'
+    id: 'cfn-lint'
+  repo: 'https://github.com/aws-cloudformation/cfn-lint'
+  rev: 'v1.15.1'
+-
+  hooks:
+  -
+    id: 'hadolint-docker'
+  repo: 'https://github.com/hadolint/hadolint'
+  rev: 'v2.12.0'
+...

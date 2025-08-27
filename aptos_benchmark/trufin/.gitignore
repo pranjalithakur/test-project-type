@@ -1,0 +1,17 @@
+# Igore build output
+build/
+
+# Ignore coverage and tracing information
+.trace
+*.mvcov
+
+# Hide keys
+.aptos
+
+# move prover file
+boogie.bpl
+
+.DS_Store
+
+# Ignore Deployment logs
+*.log

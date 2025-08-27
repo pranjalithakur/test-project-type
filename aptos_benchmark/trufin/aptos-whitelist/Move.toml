@@ -1,0 +1,10 @@
+[package]
+name = "aptos-whitelist"
+version = "0.0.1"
+upgrade_policy = "compatible"
+
+[addresses]
+whitelist = ""
+
+[dependencies]
+AptosFramework = { git = "https://github.com/aptos-labs/aptos-core.git", subdir = "aptos-move/framework/aptos-framework", rev = "mainnet" }

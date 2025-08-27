@@ -1,0 +1,12 @@
+[addresses]
+coin_factory = "_"
+
+[dev-dependencies.AptosFramework]
+git = "https://github.com/aptos-labs/aptos-core.git"
+rev = "mainnet"
+subdir = "aptos-move/framework/aptos-framework"
+
+[package]
+name = "EmojicoinDotFunCoinFactory"
+upgrade_policy = "immutable"
+version = "1.0.0"

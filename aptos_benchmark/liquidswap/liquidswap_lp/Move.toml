@@ -1,0 +1,12 @@
+[package]
+name = 'LiquidswapLP'
+version = '1.0.0'
+
+[addresses]
+liquidswap_lp = "0x385068db10693e06512ed54b1e6e8f1fb9945bb7a78c28a45585939ce953f99e"
+
+[dev-dependencies.MoveStdlib]
+git = "https://github.com/aptos-labs/aptos-core.git"
+rev = "843b204dce971d98449b82624f4f684c7a18b991"
+subdir = "aptos-move/framework/move-stdlib"
+

@@ -1,0 +1,92 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "envMode": "loose",
+  "globalDependencies": [
+    "**/*.env.*",
+    "**/*.env",
+    "**/tsconfig.json",
+    "**/package.json"
+  ],
+  "globalEnv": [],
+  "tasks": {
+    "build": {
+      "dependsOn": [
+        "^build"
+      ],
+      "outputs": [
+        "dist/**",
+        ".next/**"
+      ]
+    },
+    "build:debug": {
+      "outputs": [
+        "dist/**",
+        ".next/**"
+      ]
+    },
+    "build:no-checks": {
+      "outputs": [
+        "dist/**",
+        ".next/**"
+      ]
+    },
+    "build:test": {
+      "outputs": [
+        "dist/**",
+        ".next/**"
+      ]
+    },
+    "check": {
+      "outputs": []
+    },
+    "clean": {
+      "outputs": []
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "format": {
+      "outputs": []
+    },
+    "format:check": {
+      "outputs": []
+    },
+    "lint": {
+      "outputs": []
+    },
+    "lint:fix": {
+      "outputs": []
+    },
+    "playwright:install": {
+      "outputs": []
+    },
+    "start": {
+      "outputs": [],
+      "persistent": true
+    },
+    "submodule": {
+      "outputs": []
+    },
+    "test": {
+      "cache": false,
+      "outputs": []
+    },
+    "test:e2e": {
+      "cache": false,
+      "outputs": []
+    },
+    "test:sdk:parallel": {
+      "cache": false,
+      "outputs": []
+    },
+    "test:sdk:sequential": {
+      "cache": false,
+      "outputs": []
+    },
+    "test:unit": {
+      "cache": false,
+      "outputs": []
+    }
+  }
+}

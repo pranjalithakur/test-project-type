@@ -1,0 +1,53 @@
+# LaTeX
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.synctex.gz
+
+# System
+*.DS_Store
+
+# Secrets
+.secrets/*
+src/typescript/dialect/secret.key
+
+# Do not track LaTeX PDF output, just sourcefile and assets
+doc/litepaper/main.pdf
+
+# Python
+*.pyc
+*.egg-info
+
+# Jupyter
+*.ipynb_checkpoints/*
+*-checkpoint.ipynb*
+
+# Move
+*.abi
+*.trace
+*.bpl
+*.mvcov
+*.mv
+*.mvsm
+
+# Sample Move projects
+src/move/move-cli-readme/*
+src/move/TestExample/*
+src/move/tutorials/*
+
+# Econia Move project ignores
+src/move/econia/build/dependencies/*
+src/move/econia/build/Econia/sources/*
+src/move/econia/build/Econia/*.yaml
+
+# Cargo
+src/move/econia/target/*
+*Cargo.lock
+
+# Sphinx
+doc/sphinx/build/*
+
+# Temporary markdown file for prototyping
+temp.md

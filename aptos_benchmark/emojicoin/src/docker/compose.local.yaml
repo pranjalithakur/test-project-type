@@ -1,0 +1,48 @@
+# yamllint disable rule:empty-lines rule:key-ordering
+# cspell:word localnet
+
+# Services in this file are EXCLUSIVELY for running a local testnet.
+---
+include:
+# This setup allows us to only have to specify only one compose file.
+- path:
+  - 'compose.yaml'
+  - 'processor.overrides.yaml'
+name: 'emojicoin-dot-fun'
+services:
+  localnet:
+    network_mode: 'host'
+    container_name: 'localnet'
+    build:
+      context: '../../'
+      dockerfile: 'src/docker/localnet/Dockerfile'
+    healthcheck:
+      test:
+      - 'CMD'
+      - 'sh/healthcheck.sh'
+      interval: '5s'
+      timeout: '5s'
+      retries: 5
+      start_period: '30s'
+    entrypoint:
+    - '/bin/bash'
+    - '/app/sh/run-localnet.sh'
+    volumes:
+    - '/var/run/docker.sock:/var/run/docker.sock'
+    - './localnet/.aptos/testnet:/app/.aptos/testnet'
+  deployer:
+    extra_hosts:
+    - 'host.docker.internal:host-gateway'
+    build:
+      context: '../../'
+      dockerfile: 'src/docker/deployer/Dockerfile'
+      args:
+        PUBLISHER_PRIVATE_KEY: '${PUBLISHER_PRIVATE_KEY}'
+    environment:
+      PUBLISHER_PRIVATE_KEY: '${PUBLISHER_PRIVATE_KEY}'
+    image: 'econialabs/emojicoin-dot-fun-deployer:latest'
+    container_name: 'deployer'
+    depends_on:
+      localnet:
+        condition: 'service_started'
+...

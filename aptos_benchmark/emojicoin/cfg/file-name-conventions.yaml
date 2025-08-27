@@ -1,0 +1,34 @@
+# cspell:disable
+---
+# Options: snake_case, kebab-case, camelCase, PascalCase, UPPER_CASE,
+# and * for any case.
+default: 'kebab-case'
+filetypes:
+  .js: 'kebab-case'
+  .md: '*'
+  .move: 'snake_case'
+  .py: 'snake_case'
+  .pyi: 'snake_case'
+  .rs: 'snake_case'
+  .test.ts: 'kebab-case'
+  .toml: 'PascalCase'
+  .ts: 'kebab-case'
+  .tsx: '*'
+  .yaml: 'kebab-case'
+ignore_directories:
+- 'src/typescript/frontend/public/fonts'
+- 'src/typescript/frontend/public/locales'
+ignore_files:
+- '.env'
+- '.eslintignore'
+- '.eslintrc.js'
+- '.flake8'
+- '.gitignore'
+- '.node-version'
+- '.prettierignore'
+- '.prettierrc.cjs'
+- '.prettierrc.js'
+- 'example.env'
+- 'pyproject.toml'
+- 'Cargo.lock'
+...

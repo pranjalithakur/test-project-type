@@ -1,0 +1,35 @@
+{
+  "dictionaries": [
+    "project-words"
+  ],
+  "dictionaryDefinitions": [
+    {
+      "addWords": true,
+      "name": "project-words",
+      "path": "./cspell-dictionary.txt"
+    },
+    {
+      "addWords": true,
+      "name": "frontend-words",
+      "path": "./cspell-frontend-dictionary.txt"
+    }
+  ],
+  "ignorePaths": [
+    "/project-words.txt",
+    "**/package.json",
+    "**/pnpm-lock.yaml",
+    "../src/typescript/sdk/src/emoji_data/symbol-emojis.json",
+    "../src/typescript/sdk/src/emoji_data/symbol-names.json",
+    "../src/typescript/sdk/src/emoji_data/chat-emojis.json",
+    "../src/typescript/sdk/tests/unit/event-parser/json/bonding-curve-states.json",
+    "../src/typescript/sdk/tests/unit/event-parser/event-models.test.ts"
+  ],
+  "overrides": [
+    {
+      "dictionaries": [
+        "frontend-words"
+      ],
+      "filename": "**/src/typescript/frontend/**/*.{css,html,ts,tsx,js,jsx,json}"
+    }
+  ]
+}

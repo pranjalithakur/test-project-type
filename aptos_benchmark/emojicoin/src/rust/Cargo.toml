@@ -1,0 +1,17 @@
+[workspace]
+# Exclude the processor, which is a workspace in a submodule.
+exclude = ["processor"]
+members = [
+  "broker",
+  "allowlister3000"
+]
+resolver = "2"
+
+[workspace.package]
+authors = ["Econia Labs <developers@econialabs.com>"]
+edition = "2021"
+homepage = "https://www.econialabs.com/"
+license = "Apache License"
+publish = false
+repository = "https://github.com/econia-labs/emojicoin-dot-fun"
+rust-version = "1.70"
