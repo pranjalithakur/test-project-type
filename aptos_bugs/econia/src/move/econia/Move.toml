@@ -1,0 +1,17 @@
+[package]
+name = 'Econia'
+version = '4.0.0' # Per SemVer
+upgrade_policy = 'compatible'
+
+[addresses]
+econia = '0x1abfa4c5bb5f381b00719fc19e8e655cb2531904bf8f59309efd18eb081373b4'
+# Mock addresses for testing.
+user = '0x1234'
+user_0 = '0x2345'
+user_1 = '0x3456'
+integrator = '0x4567'
+
+[dependencies.AptosFramework]
+git = 'https://github.com/aptos-labs/aptos-core'
+subdir = 'aptos-move/framework/aptos-framework'
+rev = '91824bc7e8e488e7307b8f5ffee4e222a65e34a5'

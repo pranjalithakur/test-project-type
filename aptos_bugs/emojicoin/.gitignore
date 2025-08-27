@@ -1,0 +1,6 @@
+# cspell:word mvcov
+*.mvcov
+*.trace
+**/build/
+**/coin_factory/json
+*/doc/*

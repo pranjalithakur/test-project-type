@@ -1,0 +1,42 @@
+[package]
+name = "Sea"
+version = "0.1.0" # Per SemVer
+
+[addresses]
+sea = "0xf5de9e9d7a718c10964a8e5ce32de33c591979e2b2e76a1e58dcc9e6f74480df"
+
+# sea_spot = "0x5e8c5122bd2ce18e45912699613ab527697bf58556815c08ad5463092dd91990"
+# sea_spot = "0x38140b684d7ac7e8d9a7f1d693dd0098be7bfef0092fc0730ba2d0688e991069"
+sea_spot = "0x4f7d2de5a2b9797a9c74f906ef405dfc9c417da12d7d7eeff782eeb1ec896d2b"
+sea_team = "0x2149e2b35e29c1d8a845a7dee9b9c83dd9986991aa4e27979b076e33b693a87d"
+sea_dev = "0xa33f058bc7a5cd7138d5a064778db49fd388359fa0b66af445f682d7905d58f6"
+
+# Mock users for unit tests
+user_1 = "0x1111"
+user_2 = "0x2222"
+user_3 = "0x3333"
+user_4 = "0x4444"
+
+[dependencies.SeaInit]
+local = "./sea_init/"
+
+[dependencies.SeaLP]
+local = "./sea_lp/"
+
+[dependencies.SeaLib]
+local = "./sea_lib/"
+
+[dependencies.AptosFramework]
+git = "https://github.com/aptos-labs/aptos-core.git"
+subdir = "aptos-move/framework/aptos-framework"
+# rev = "563e2abff8fa997aec81abe48772af8a20731f76"
+# rev = "main"
+rev = "1.0.4"
+
+# [dependencies.UQ64x64]
+# git = "https://github.com/pontem-network/UQ64x64.git"
+# rev = "v0.3.7"
+
+# [dependencies.U256]
+# git = "https://github.com/pontem-network/U256.git"
+# rev = "v0.3.8"

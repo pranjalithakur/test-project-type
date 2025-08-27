@@ -1,0 +1,18 @@
+[package]
+name = "aptos-staker"
+version = "0.0.1"
+upgrade_policy = "compatible"
+
+[addresses]
+publisher = "_"
+default_admin = "_"
+src_account = "_"
+
+[dev-addresses]
+publisher = ""
+default_admin = ""
+src_account = ""
+
+[dependencies]
+AptosFramework = { git = "https://github.com/aptos-labs/aptos-core.git", subdir = "aptos-move/framework/aptos-framework", rev = "mainnet" }
+aptos-whitelist = { local = "../aptos-whitelist" }
